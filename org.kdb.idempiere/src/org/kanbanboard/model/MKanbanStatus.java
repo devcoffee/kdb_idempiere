@@ -200,7 +200,7 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 
 	public String getStatusValue() {
 		String statusValue;
-		if (kanbanBoard.isRefList())
+		if (kanbanBoard.isColumnSQL() || kanbanBoard.isRefList())
 			statusValue =  getKDB_StatusListValue();
 		else
 			statusValue = getKDB_StatusTableID();
@@ -295,7 +295,7 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 			sql.append("SELECT ");
 
 			MTable table = kanbanBoard.getTable();
-			MColumn column = kanbanBoard.getStatusColumn();
+			
 			
 			String keys[] = table.getKeyColumns();
 			sql.append(keys[0]); 
@@ -307,9 +307,14 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 			if (kanbanBoard.getWhereClause() != null)
 				whereClause.append(kanbanBoard.getWhereClause() + " AND ");
 
-			whereClause.append(column.getColumnName() + " = ");
+			if(kanbanBoard.isColumnSQL()) {
+				whereClause.append(kanbanBoard.getColumnSQL() + " = ");
+			} else {
+				MColumn column = kanbanBoard.getStatusColumn();
+				whereClause.append(column.getColumnName() + " = ");
+			}
 			
-			if (kanbanBoard.isRefList())
+			if (kanbanBoard.isColumnSQL() || kanbanBoard.isRefList())
 				whereClause.append("'" + getStatusValue() + "'");
 			else
 				whereClause.append(getStatusValue());
