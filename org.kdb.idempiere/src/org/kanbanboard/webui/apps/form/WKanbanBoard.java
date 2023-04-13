@@ -64,7 +64,9 @@ import org.compiere.model.GridField;
 import org.compiere.model.GridFieldVO;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
+import org.compiere.model.MQuery;
 import org.compiere.model.MSysConfig;
+import org.compiere.model.MTable;
 import org.compiere.model.X_AD_Process;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.DB;
@@ -951,8 +953,15 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			MKanbanCard card = mapCellColumn.get(e.getTarget());
 			int recordId = card.getRecordID();
 			int AD_Table_ID = getAd_Table_id();
-			zoom(recordId,AD_Table_ID);
-		} else if (e instanceof DropEvent) {
+			//TODO: create new field to define at kanban config the zoom window
+			int AD_Window_ID = 0;
+			if (kanbanBoardId == 1000000)
+				AD_Window_ID = 1500469; // solicitações (suporte)
+			else if(kanbanBoardId == 5000000)
+				AD_Window_ID = 1500261; // ordem de serviço
+
+			zoom(recordId,AD_Table_ID, AD_Window_ID);
+		} else if (e instanceof DropEvent ) {
 			DropEvent me = (DropEvent) e;
 			Cell startItem = null;
 
