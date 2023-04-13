@@ -289,7 +289,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			boardParamsDiv = new Div();
 			boardParamsDiv.setHeight("100%");
 			boardParamsDiv.setStyle("padding-left: 5px; display: table-cell; vertical-align: middle;");
-			if (m_sEditors.size() > 1 && MSysConfig.getBooleanValue("KDB_GROUP_PARAMETERS", true, Env.getAD_Client_ID(Env.getCtx()))) {
+			// devcoffee: new parameter always group to show in a suspense box
+			if ((MSysConfig.getBooleanValue("KDB_ALWAYS_GROUP_PARAMETERS", true, Env.getAD_Client_ID(Env.getCtx())) || m_sEditors.size() > 1) && MSysConfig.getBooleanValue("KDB_GROUP_PARAMETERS", true, Env.getAD_Client_ID(Env.getCtx()))) {
 				bFilter.setLabel(Msg.getMsg(Env.getCtx(), "KDB_QuickFilter"));
 				if (ThemeManager.isUseFontIconForImage())
 					bFilter.setIconSclass("z-icon-MoveDown");
@@ -529,7 +530,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					else
 						column.setLabel(status.getPrintableName());
 					if (status.isExceed())
-						column.setStyle("background-color: red;");
+						column.setStyle("background-color: #ff8c00;");
 					if (getSummarySql() != null) {
 						column.setStyle("background-color: #d9e3ec");
 						auxheader = new Auxheader();
@@ -1022,7 +1023,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					Column clickedColumn = (Column) popup.getAttribute("columnRef");
 					referenceID = Integer.parseInt(clickedColumn.getId());
 				}
-				runProcess(selectedItem.getAttribute(PROCESS_ID_KEY), getSaveKeys((String) selectedItem.getAttribute(PROCESS_TYPE),referenceID));
+				runProcess(selectedItem.getAttribute(PROCESS_ID_KEY), getSaveKeys((String) selectedItem.getAttribute(PROCESS_TYPE), referenceID), (String) selectedItem.getAttribute(PROCESS_TYPE));
 			}
 		} else if (Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Row) {
 			collapseSwimlane((Row) e.getTarget());
@@ -1102,9 +1103,22 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
         }
 	} //valueChange
 
-	private void zoom(int recordId, int ad_table_id) {
-		AEnv.zoom(ad_table_id, recordId);
-	}
+	private void zoom(int Record_ID, int AD_Table_ID, int AD_Window_ID) {
+
+		if (AD_Window_ID == 0)
+			AD_Window_ID = Env.getZoomWindowID(AD_Table_ID, Record_ID);
+
+		//  Nothing to Zoom to
+		if (AD_Window_ID == 0)
+			return;
+
+		MTable table = MTable.get(Env.getCtx(), AD_Table_ID);
+		MQuery query = MQuery.getEqualQuery(table.getKeyColumns()[0], Record_ID);
+		query.setZoomTableName(table.getTableName());
+		query.setZoomColumnName(table.getKeyColumns()[0]);
+		query.setZoomValue(Record_ID);
+		AEnv.zoom(AD_Window_ID, query);
+	}	//	zoom
 	
 	private void fullRefresh() {
 		refreshBoard();
@@ -1116,6 +1130,9 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		repaintGrid();
 	}
 	
+	protected void runProcess (Object processIdObj, final Collection<KeyNamePair> saveKeys){
+		runProcess(processIdObj, saveKeys, "");
+	}	
 	/**
      * Run a process.
      * show process dialog,
@@ -1124,13 +1141,23 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
      * @param processIdObj
 	 * @param collection 
      */
-    protected void runProcess (Object processIdObj, final Collection<KeyNamePair> saveKeys) {
+	protected void runProcess (Object processIdObj, final Collection<KeyNamePair> saveKeys, String processType){
+		//devCoffee 5377
+		Integer recordId = 0;
+		Integer tableId = 0;
+
+		if(saveKeys != null &&  processType.equals(KanbanBoard.CARD_PROCESS)){
+			recordId = saveKeys.iterator().next().getKey();
+			tableId = Integer.parseInt(saveKeys.iterator().next().getName());
+		}
+		//fim devCoffee 5377
+
     	final Integer processId = (Integer)processIdObj;
-    	final MProcess mProcess = MProcess.get(processId);
-    	final ProcessInfo m_pi = new ProcessInfo(mProcess.getName(), processId);
+    	final MProcess mProcess = MProcess.get(Env.getCtx(), processId);
+    	final ProcessInfo m_pi = new ProcessInfo(mProcess.getName(), processId, tableId, recordId); //devCoffee 5377
 		m_pi.setAD_User_ID(Env.getAD_User_ID(Env.getCtx()));
 		m_pi.setAD_Client_ID(Env.getAD_Client_ID(Env.getCtx()));
-		MPInstance instance = new MPInstance(Env.getCtx(), processId, 0);
+		MPInstance instance = new MPInstance(Env.getCtx(), processId, recordId); //devCoffee 5377
 		instance.saveEx();
 		final int pInstanceID = instance.getAD_PInstance_ID();
 		// Execute Process

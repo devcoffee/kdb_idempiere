@@ -103,6 +103,34 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 		return ii.intValue();
 	}
 
+	public org.compiere.model.I_AD_Window getAD_Window() throws RuntimeException
+	{
+		return (org.compiere.model.I_AD_Window)MTable.get(getCtx(), org.compiere.model.I_AD_Window.Table_ID)
+			.getPO(getAD_Window_ID(), get_TrxName());
+	}
+
+	/** Set Window.
+		@param AD_Window_ID Data entry or display window
+	*/
+	public void setAD_Window_ID (int AD_Window_ID)
+	{
+		if (AD_Window_ID < 1)
+			set_Value (COLUMNNAME_AD_Window_ID, null);
+		else
+			set_Value (COLUMNNAME_AD_Window_ID, Integer.valueOf(AD_Window_ID));
+	}
+
+	/** Get Window.
+		@return Data entry or display window
+	  */
+	public int getAD_Window_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_AD_Window_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	/** Set Create Statuses.
 		@param CreateStatuses Create Statuses	  */
 	public void setCreateStatuses (String CreateStatuses)

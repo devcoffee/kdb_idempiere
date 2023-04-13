@@ -88,6 +88,10 @@ public class KanbanBoard {
 		return kanbanBoard.getBackgroundColor();
 	}
 
+	public int getAD_Window_ID() {
+		return kanbanBoard.getAD_Window_ID();
+	}
+	
 	public KeyNamePair[] getProcessList() {
 		String sql = null;
 		KeyNamePair[] list;
@@ -341,14 +345,14 @@ public class KanbanBoard {
     	
     	if (processType.equals(CARD_PROCESS)) {
     		// Record-ID - Kanban Board -ID
-    		saveKeys.add(new KeyNamePair(referenceID, Integer.toString(kanbanBoard.getKDB_KanbanBoard_ID())));
+    		//devCoffee 5377
+    		saveKeys.add ( new KeyNamePair(referenceID, Integer.toString(getAd_Table_id())));
     	} else if(processType.equals(STATUS_PROCESS)) {
-    		// - Status ID -- (Table Reference ID)
-    		String statusValue = null;
-    		if (kanbanBoard.getStatus(referenceID) != null)
-    			statusValue = kanbanBoard.getStatus(referenceID).getStatusValue();
-    		
-    		saveKeys.add(new KeyNamePair(referenceID, statusValue));
+    		// - Status ID -- (Table Reference ID)    		
+    		//devCoffee 5377
+    		for(int i=0; i<kanbanBoard.getStatus(referenceID).getQueuedRecords().size(); i++){
+    			saveKeys.add(new KeyNamePair(kanbanBoard.getStatus(referenceID).getQueuedRecords().get(i).getRecordID(), Integer.toString(getAd_Table_id())));
+    		}
     	} else if (processType.equals(BOARD_PROCESS)) {
     		//Kanban Board ID - Table ID
     		saveKeys.add (new KeyNamePair(kanbanBoard.getKDB_KanbanBoard_ID(), Integer.toString(getAd_Table_id())));
