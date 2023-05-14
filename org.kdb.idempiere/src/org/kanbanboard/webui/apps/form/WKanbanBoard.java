@@ -953,13 +953,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			MKanbanCard card = mapCellColumn.get(e.getTarget());
 			int recordId = card.getRecordID();
 			int AD_Table_ID = getAd_Table_id();
-			//TODO: create new field to define at kanban config the zoom window
-			int AD_Window_ID = 0;
-			if (kanbanBoardId == 1000000)
-				AD_Window_ID = 1500469; // solicitações (suporte)
-			else if(kanbanBoardId == 5000000)
-				AD_Window_ID = 1500261; // ordem de serviço
-
+			int AD_Window_ID =  getAD_Window_ID();;
 			zoom(recordId,AD_Table_ID, AD_Window_ID);
 		} else if (e instanceof DropEvent ) {
 			DropEvent me = (DropEvent) e;
