@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.adempiere.util.Callback;
 import org.adempiere.webui.LayoutUtils;
 import org.adempiere.webui.apps.AEnv;
 import org.adempiere.webui.apps.BusyDialog;
@@ -59,6 +60,7 @@ import org.adempiere.webui.panel.IFormController;
 import org.adempiere.webui.session.SessionManager;
 import org.adempiere.webui.theme.ThemeManager;
 import org.adempiere.webui.util.ZKUpdateUtil;
+import org.adempiere.webui.window.Dialog;
 import org.adempiere.webui.window.WTextEditorDialog;
 import org.compiere.model.GridField;
 import org.compiere.model.GridFieldVO;
@@ -75,10 +77,11 @@ import org.compiere.util.KeyNamePair;
 import org.compiere.util.Msg;
 import org.compiere.util.Util;
 import org.kanbanboard.apps.form.KanbanBoard;
+import org.kanbanboard.apps.form.KanbanBoardProcessController;
+import org.kanbanboard.apps.form.ProcessUIElement;
 import org.kanbanboard.model.KanbanSwimlane;
 import org.kanbanboard.model.MKanbanCard;
 import org.kanbanboard.model.MKanbanParameter;
-import org.kanbanboard.model.MKanbanProcess;
 import org.kanbanboard.model.MKanbanStatus;
 import org.kanbanboard.model.MKanbanSwimlaneConfiguration;
 import org.zkoss.zhtml.Span;
@@ -157,6 +160,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 
 	private Map<Cell, MKanbanCard> mapCellColumn = new HashMap<Cell, MKanbanCard>();
 	private Map<Cell, MKanbanStatus> mapEmptyCellField = new HashMap<Cell, MKanbanStatus>();
+	private Map<Cell, KanbanSwimlane> mapEmptyCellSwimlane = new HashMap<Cell, KanbanSwimlane>();
 	private Map<String, List<Row>> swimlaneRowsMap = new HashMap<String, List<Row>>();
 
 	private Grid kanbanPanel;
@@ -291,7 +295,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			boardParamsDiv = new Div();
 			boardParamsDiv.setHeight("100%");
 			boardParamsDiv.setStyle("padding-left: 5px; display: table-cell; vertical-align: middle;");
-			// devcoffee: new parameter always group to show in a suspense box
+			// new parameter always group to show in a suspense box
 			if ((MSysConfig.getBooleanValue("KDB_ALWAYS_GROUP_PARAMETERS", true, Env.getAD_Client_ID(Env.getCtx())) || m_sEditors.size() > 1) && MSysConfig.getBooleanValue("KDB_GROUP_PARAMETERS", true, Env.getAD_Client_ID(Env.getCtx()))) {
 				bFilter.setLabel(Msg.getMsg(Env.getCtx(), "KDB_QuickFilter"));
 				if (ThemeManager.isUseFontIconForImage())
@@ -330,7 +334,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	
 	private void fillParameterEditors() {
 		for (MKanbanParameter param : getBoardParameters()) {
-			WEditor editor = WebEditorFactory.getEditor(getGridField(param), true);
+			WEditor editor = WebEditorFactory.getEditor(param.getGridField(), true);
 			if (param.getValue() != null) {
 				editor.setValue(param.getValue());
 			}
@@ -342,12 +346,12 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 
 	        Label label = editor.getLabel();
 	        //Fix miss label of check box
-	        label.setValue(param.getName());
+	        label.setValue(param.getLabel());
 
 	        m_sEditors.add(editor);
 			mapEditorParameter.put(editor, param);
 			if (param.isRange()) {
-				GridFieldVO voF2 = GridFieldVO.createParameter(getGridField(param).getVO());
+				GridFieldVO voF2 = GridFieldVO.createParameter(param.getGridField().getVO());
 				GridField mField2 = new GridField(voF2);
 				// The Editor
 				WEditor editor2 = WebEditorFactory.getEditor(mField2, false);
@@ -434,20 +438,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			boardButtonsDiv = null;
 		}
 
-		if (getNumberOfProcesses() > 0  && getProcesses() != null) {
-			//Clear them to avoid duplicants when refreshing
-			getStatusProcesses().clear();
-			getBoardProcesses().clear();
-			getCardProcesses().clear();
-			//Fill the lists - (Status,board,card) process
-			for (MKanbanProcess process: getProcesses()) {
-				if (MKanbanProcess.KDB_PROCESSSCOPE_Status.equals(process.getKDB_ProcessScope()))
-					getStatusProcesses().add(process);
-				else if (MKanbanProcess.KDB_PROCESSSCOPE_Board.equals(process.getKDB_ProcessScope()))
-					getBoardProcesses().add(process);
-				else if (MKanbanProcess.KDB_PROCESSSCOPE_Card.equals(process.getKDB_ProcessScope()))
-					getCardProcesses().add(process);
-			}
+		if (kanbanHasProcesses()) {
+			resetAndPopulateArrays();
 			setStatusProcessMenupopup();
 			setCardMenupopup();
 			setBoardProcess();
@@ -462,6 +454,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	public void createKanbanBoardPanel() {
 		mapCellColumn.clear();
 		mapEmptyCellField.clear();
+		mapEmptyCellSwimlane.clear();
 		mapEditorParameter.clear();
 		mapEditorToParameter.clear();
 		m_sEditors.clear();
@@ -532,7 +525,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					else
 						column.setLabel(status.getPrintableName());
 					if (status.isExceed())
-						column.setStyle("background-color: #ff8c00;");
+						column.setStyle("background-color: red;");
 					if (getSummarySql() != null) {
 						column.setStyle("background-color: #d9e3ec");
 						auxheader = new Auxheader();
@@ -582,6 +575,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	public void createRows() {
 		mapCellColumn.clear();
 		mapEmptyCellField.clear();
+		mapEmptyCellSwimlane.clear();
 		Rows rows = kanbanPanel.newRows();
 		resetStatusProperties();
 		if (paintSwimlanes()) {
@@ -604,11 +598,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 				for (MKanbanStatus status : getStatuses()) {
 					setRowStyle(row);
 					if (!status.hasMoreCards(swimlane)) {
-						createStatusCellWithNoCards(row, status);
+						createStatusCellWithNoCards(row, status, swimlane);
 					} else {
 						if (status.hasQueue()) {
 							if (!status.hasMoreQueuedCards(swimlane)) {
-								createEmptyCell(row, status);
+								createEmptyCell(row, status, swimlane);
 								createCardCell(row, status.getCard(swimlane));
 								swimlane.removeOneCard();
 							} else {
@@ -618,7 +612,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 									createCardCell(row, status.getCard(swimlane));
 									swimlane.removeOneCard();
 								} else {
-									createEmptyCell(row,status);
+									createEmptyCell(row, status, swimlane);
 								}
 							}
 						} else {
@@ -698,8 +692,15 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		}
 	}
 	
+	private void createStatusCellWithNoCards(Row row, MKanbanStatus status, KanbanSwimlane swimlane) {
+		if (status.hasQueue()) { //Creates the extra cell for the queue space
+			createEmptyCell(row, status, swimlane);
+		}
+		createEmptyCell(row, status, swimlane);
+	}
+	
 	private void createStatusCellWithNoCards(Row row, MKanbanStatus status) {
-		if (status.hasQueue()) {
+		if (status.hasQueue()) { //Creates the extra cell for the queue space
 			createEmptyCell(row, status);
 		}
 		createEmptyCell(row, status);
@@ -717,6 +718,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		}
 		cell.setColspan(totalNumberOfColumns);
 		row.appendChild(cell);
+	}
+	
+	private void createEmptyCell(Row row, MKanbanStatus status, KanbanSwimlane swimlane) {
+		createEmptyCell(row, status);
+		mapEmptyCellSwimlane.put(row.getLastCell(), swimlane);
 	}
 
 	private void createEmptyCell(Row row, MKanbanStatus status) {
@@ -823,22 +829,22 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	 */
 	private void setStatusProcessMenupopup() {
 		
-		if (getStatusProcesses() != null && getStatusProcesses().size() > 0) {
+		if (kanbanHasStatusProcess()) {
 			menupopup = new Menupopup();
 			menupopup.setId(KDB_PROCESS_MENUPOPUP+windowNo);
 			menupopup.addEventListener(Events.ON_OPEN, this);
 			Menuitem menuitem;
 			
 			//Add the processes
-			for (MKanbanProcess process : getStatusProcesses()) {
+			for (ProcessUIElement element : getStatusProcessElements()) {
 				menuitem = new Menuitem();
-				menuitem.setId(Integer.toString(process.getKDB_KanbanProcess_ID()));
-				menuitem.setLabel(process.getName());
+				menuitem.setId(Integer.toString(element.getElementID()));
+				menuitem.setLabel(element.getName());
 				if (ThemeManager.isUseFontIconForImage())
 					menuitem.setIconSclass("z-icon-Process");
 				else
 					menuitem.setImage(ThemeManager.getThemeResource("images/Process16.png"));
-				menuitem.setAttribute(PROCESS_ID_KEY, Integer.valueOf(process.getAD_Process_ID()));
+				menuitem.setAttribute(PROCESS_ID_KEY, Integer.valueOf(element.getAD_Process_ID()));
 				menuitem.setAttribute(PROCESS_TYPE, STATUS_PROCESS);
 				menuitem.addEventListener(Events.ON_CLICK, this);
 				menupopup.appendChild(menuitem);
@@ -871,26 +877,25 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		
 		cardpopup = new Menupopup();
 		
-		if (getCardProcesses() != null && getCardProcesses().size() > 0) {
+		if (kanbanHasCardProcess()) {
 			
 			cardpopup.setId("cardMenu");
 			Menuitem menuitem;
-			
+
 			//Add the processes
-			for (MKanbanProcess process : getCardProcesses()) {
+			for (ProcessUIElement element : getCardProcessElements()) {
 				menuitem = new Menuitem();
-				menuitem.setId(Integer.toString(process.getKDB_KanbanProcess_ID()));
-				menuitem.setLabel(process.getName());
+				menuitem.setId(Integer.toString(element.getElementID()));
+				menuitem.setLabel(element.getName());
 				if (ThemeManager.isUseFontIconForImage())
 					menuitem.setIconSclass("z-icon-Process");
 				else
 					menuitem.setImage(ThemeManager.getThemeResource("images/Process16.png"));
-				menuitem.setAttribute(PROCESS_ID_KEY, Integer.valueOf(process.getAD_Process_ID()));
+				menuitem.setAttribute(PROCESS_ID_KEY, Integer.valueOf(element.getAD_Process_ID()));
 				menuitem.setAttribute(PROCESS_TYPE, CARD_PROCESS);
 				menuitem.addEventListener(Events.ON_CLICK, this);
 				cardpopup.appendChild(menuitem);
 			}
-			
 		}
 		kForm.appendChild(cardpopup);
 	}//setCardMenupopup
@@ -900,17 +905,17 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	 */
 	private void setBoardProcess() {
 
-		if (getBoardProcesses() != null && getBoardProcesses().size() > 0) {
+		if (kanbanHasBoardProcess()) {
 			boardButtonsDiv = new Div();
 			boardButtonsDiv.setHeight("100%");
 			boardButtonsDiv.setStyle("display: table-cell; vertical-align: middle;");
 			Button b;
-			for (MKanbanProcess process : getBoardProcesses()) {
+			for (ProcessUIElement element : getBoardProcessElements()) {
 				b = new Button();
-				b.setId(Integer.toString(process.getKDB_KanbanProcess_ID()));
+				b.setId(Integer.toString(element.getElementID()));
 				b.setImage(null);
-				b.setLabel(process.getProcess().get_Translation(MProcess.COLUMNNAME_Name));
-				b.setAttribute(PROCESS_ID_KEY, Integer.valueOf(process.getAD_Process_ID()));
+				b.setLabel(element.getName());
+				b.setAttribute(PROCESS_ID_KEY, Integer.valueOf(element.getAD_Process_ID()));
 				b.setAttribute(PROCESS_TYPE, BOARD_PROCESS);
 				b.addEventListener(Events.ON_CLICK, this);
 				b.setHeight("70%");
@@ -940,16 +945,13 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	 */
 	public void onEvent(Event e) {
 
-		// select an item within the list -- set it active and show the properties
-		if (Events.ON_SELECT.equals(e.getName()) && e.getTarget() instanceof Listbox) {
+		if (isInteractionWithAList(e)) {
 			if (e.getTarget().equals(kanbanListbox)) {
 				selectKanbanBoard();
 			} else if (e.getTarget().equals(swimlaneListbox)) {
 				selectSwimlane();
 			}
-		}
-		// Check event ONDoubleCLICK on a cell Navigate into documents
-		else if (Events.ON_DOUBLE_CLICK.equals(e.getName()) && (e.getTarget() instanceof Cell)) {
+		} else if (isDoubleClickOnCard(e)) {
 			MKanbanCard card = mapCellColumn.get(e.getTarget());
 			int recordId = card.getRecordID();
 			int AD_Table_ID = getAd_Table_id();
@@ -977,22 +979,28 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 				} else {
 					endStatus = endField.getBelongingStatus();
 				}
+				
 
 				if (!swapCard(startStatus, endStatus, startField))
-					Messagebox.show(Msg.getMsg(Env.getCtx(), MKanbanCard.KDB_ErrorMessage));
-				else 
+					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), startField.getStatusChangeMessage()));
+				else {
+					//Change swimlane as well if it is active
+					if (getActiveSwimlane() != null) {
+						String endSwimlaneValue = endField != null ? endField.getSwimlaneValue() : mapEmptyCellSwimlane.get(me.getTarget()).getValue();
+						if (!swapSwimlanes(startField, endSwimlaneValue))
+							Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), startField.getStatusChangeMessage()));
+					}
 					repaintCards();
+				}
 			} else if (me.getTarget() instanceof Row) { //Swim lane Header
 				Row endSwimlane = (Row) me.getTarget();
 				MKanbanCard draggedCard = mapCellColumn.get(startItem);
 				if (!swapSwimlanes(draggedCard, endSwimlane))
-					Messagebox.show(Msg.getMsg(Env.getCtx(), MKanbanCard.KDB_ErrorMessage));
+					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), draggedCard.getStatusChangeMessage()));
 				else 
 					repaintCards();
 			}
-		}
-		//Check Event on click for processes
-		else if (Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Button) {
+		} else if (isClickOnBoardProcess(e)) {
 			Button clickedButton = (Button) e.getTarget();
 
 			if (clickedButton.getId().equals(KDB_REFRESH_BUTTON_ID)) {
@@ -1002,43 +1010,20 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			} else {
 				runProcess(clickedButton.getAttribute(PROCESS_ID_KEY), getSaveKeys(BOARD_PROCESS, 0));
 			}
-		} else if (Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Menuitem) {
+		} else if (isClickOnMenuItem(e)) {
 			Menuitem selectedItem = (Menuitem) e.getTarget();
-			//Reproduce behavior of "auto" for customized menupopup
-			if (selectedItem.isCheckmark()) {
-				Column column = (Column) kanbanPanel.getColumns().getFirstChild();
-				while (column != null) {
-					if(column.getId().equals(selectedItem.getId())) {
-						column.setVisible(selectedItem.isChecked());
-						break;
-					}
-					column = (Column) column.getNextSibling();
-				}
+			if (selectedItem.isCheckmark()) { 			//Reproduce behavior of "auto" for customized menupopup
+				changeColumnVisibility(selectedItem);
 			} else {
-				enableButtons(false);
-				int referenceID = 0;
-				
-				if (CARD_PROCESS.equals(selectedItem.getAttribute(PROCESS_TYPE))) {
-					referenceID = rightClickedCard;
-					Env.setContext(Env.getCtx(), windowNo, "KDB_Record_ID", referenceID);
-				} else if (STATUS_PROCESS.equals(selectedItem.getAttribute(PROCESS_TYPE))) {
-					Menupopup popup = (Menupopup) e.getTarget().getParent();
-					Column clickedColumn = (Column) popup.getAttribute("columnRef");
-					referenceID = Integer.parseInt(clickedColumn.getId());
-				}
-				runProcess(selectedItem.getAttribute(PROCESS_ID_KEY), getSaveKeys((String) selectedItem.getAttribute(PROCESS_TYPE), referenceID), (String) selectedItem.getAttribute(PROCESS_TYPE));
+				runMenuItemProcess(selectedItem, e);
 			}
-		} else if (Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Row) {
+		} else if (isClickOnSwimlane(e)) {
 			collapseSwimlane((Row) e.getTarget());
-		}
-		//Right click on cards for associated process
-		else if (Events.ON_RIGHT_CLICK.equals(e.getName()) && (e.getTarget() instanceof Cell)) {
+		} else if (isRightClickOnCard(e)) {
 			//Sets the record ID of the selected card to use in the associated process
 			MKanbanCard card = mapCellColumn.get(e.getTarget());
 			rightClickedCard = card.getRecordID();
-		}
-
-		else if (Events.ON_OPEN.equals(e.getName()) && (e.getTarget() instanceof Menupopup)) {
+		} else if (Events.ON_OPEN.equals(e.getName()) && (e.getTarget() instanceof Menupopup)) {
 
 			OpenEvent openEvt = (OpenEvent) e;
 			if (openEvt.isOpen()) {
@@ -1055,6 +1040,115 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			}
 		}
 	}//onEvent
+	
+	/**
+	 * Lists are Kanban Board list or Swimlane list
+	 * @param Event e
+	 * @return true if the user interacted with a list component
+	 */
+	private boolean isInteractionWithAList(Event e) {
+		return Events.ON_SELECT.equals(e.getName()) && e.getTarget() instanceof Listbox;
+	}
+	
+	/**
+	 * Check event ONDoubleCLICK on a cell Navigate into documents
+	 * @param Event e
+	 * @return
+	 */
+	private boolean isDoubleClickOnCard(Event e) {
+		return Events.ON_DOUBLE_CLICK.equals(e.getName()) && (e.getTarget() instanceof Cell);
+	}
+	
+	/**
+	 * Board Process includes the refresh button
+	 * @param e
+	 * @return true if the user clicked on a button with board access 
+	 */
+	private boolean isClickOnBoardProcess(Event e) {
+		return Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Button;	
+	}
+	
+	/**
+	 * Menu items are either status processes or card processes
+	 * @param e
+	 * @return true if the user clicked a menu item
+	 */
+	private boolean isClickOnMenuItem(Event e) {
+		return Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Menuitem;	
+	}
+	
+	/**
+	 * @param e
+	 * @return true if the user clicked on a swimlane header 
+	 */
+	private boolean isClickOnSwimlane(Event e) {
+		return Events.ON_CLICK.equals(e.getName()) && e.getTarget() instanceof Row;	
+	}
+	
+	/**
+	 * @param e
+	 * @return true if the user right clicked on a card 
+	 */
+	private boolean isRightClickOnCard(Event e) {
+		return Events.ON_RIGHT_CLICK.equals(e.getName()) && (e.getTarget() instanceof Cell);	
+	}
+	
+	private void changeColumnVisibility(Menuitem selectedItem) {
+		Column column = (Column) kanbanPanel.getColumns().getFirstChild();
+		while (column != null) {
+			if(column.getId().equals(selectedItem.getId())) {
+				column.setVisible(selectedItem.isChecked());
+				break;
+			}
+			column = (Column) column.getNextSibling();
+		}
+	}
+	
+	private void runMenuItemProcess(Menuitem selectedItem, Event e) {
+		enableButtons(false);
+		int referenceID = 0;
+		
+		if (CARD_PROCESS.equals(selectedItem.getAttribute(PROCESS_TYPE))) {
+			referenceID = rightClickedCard;
+			Env.setContext(Env.getCtx(), windowNo, "KDB_Record_ID", referenceID);
+		} else if (STATUS_PROCESS.equals(selectedItem.getAttribute(PROCESS_TYPE))) {
+			Menupopup popup = (Menupopup) e.getTarget().getParent();
+			Column clickedColumn = (Column) popup.getAttribute("columnRef");
+			referenceID = Integer.parseInt(clickedColumn.getId());
+		}
+		runMenuItemProcess(selectedItem, referenceID);
+	}
+	
+	private void runMenuItemProcess(Menuitem selectedItem, int referenceID) {
+		Integer AD_Process_ID = (Integer) selectedItem.getAttribute(PROCESS_ID_KEY);
+		if (AD_Process_ID == KanbanBoardProcessController.COMPLETE_ALL_ID)
+			runCompleteAllCards(referenceID);
+		else if (isMoveCardProcess(AD_Process_ID)) {
+			moveCard(AD_Process_ID, referenceID);
+			repaintCards();
+		} else
+			runProcess(AD_Process_ID, getSaveKeys((String) selectedItem.getAttribute(PROCESS_TYPE),referenceID));
+	}
+	
+	private void runCompleteAllCards(int referenceID) {
+		Dialog.ask(windowNo, "KDB_CompleteAll?", new Callback<Boolean>() {
+			@Override
+			public void onCallback(Boolean result) {
+				if (result) {
+					showBusyDialog();
+					try {
+						String message = completeAllCardsInStatus(referenceID);
+						if (!"OK".equals(message))
+							Dialog.warn(windowNo, message);
+					} finally {
+						repaintCards();
+						hideBusyDialog();
+					}
+				}
+			}
+		});
+		
+	}
 	
 	private void collapseSwimlane(Row selectedRow) {
 		String value = (String) selectedRow.getAttribute(KDB_SWIMLANE_ATTRIBUTE);
@@ -1145,7 +1239,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	 * @param collection 
      */
 	protected void runProcess (Object processIdObj, final Collection<KeyNamePair> saveKeys, String processType){
-		//devCoffee 5377
+		
 		Integer recordId = 0;
 		Integer tableId = 0;
 
@@ -1153,14 +1247,14 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			recordId = saveKeys.iterator().next().getKey();
 			tableId = Integer.parseInt(saveKeys.iterator().next().getName());
 		}
-		//fim devCoffee 5377
+		
 
     	final Integer processId = (Integer)processIdObj;
     	final MProcess mProcess = MProcess.get(Env.getCtx(), processId);
-    	final ProcessInfo m_pi = new ProcessInfo(mProcess.getName(), processId, tableId, recordId); //devCoffee 5377
+    	final ProcessInfo m_pi = new ProcessInfo(mProcess.getName(), processId, tableId, recordId); 
 		m_pi.setAD_User_ID(Env.getAD_User_ID(Env.getCtx()));
 		m_pi.setAD_Client_ID(Env.getAD_Client_ID(Env.getCtx()));
-		MPInstance instance = new MPInstance(Env.getCtx(), processId, recordId); //devCoffee 5377
+		MPInstance instance = new MPInstance(Env.getCtx(), processId, recordId); 
 		instance.saveEx();
 		final int pInstanceID = instance.getAD_PInstance_ID();
 		// Execute Process
