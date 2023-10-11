@@ -11,6 +11,8 @@ import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MColumn;
+import org.compiere.model.MRefTable;
+import org.compiere.model.MReference;
 import org.compiere.model.MTable;
 import org.compiere.model.MValRule;
 import org.compiere.util.CLogger;
@@ -67,6 +69,14 @@ public class KanbanSQLUtils {
 			.append(" WHERE ")
 			.append(" AD_Client_ID IN (0, ?) AND")
 			.append(" IsActive = 'Y'");
+			
+			if (column.getAD_Reference_Value_ID() > 0 && column.getAD_Reference_Value().getValidationType().equals(MReference.VALIDATIONTYPE_TableValidation)) {
+				MRefTable refTable = MRefTable.get(column.getAD_Reference_Value_ID());
+				
+				if (refTable.getWhereClause() != null && !refTable.getWhereClause().contains("@"))
+					sqlSelect.append(" AND ")
+					.append(refTable.getWhereClause());
+			}
 			
 			if (column.getAD_Val_Rule_ID() > 0) {
 				MValRule valRule = MValRule.get(Env.getCtx(), column.getAD_Val_Rule_ID());

@@ -23,7 +23,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for KDB_KanbanBoard
  *  @author iDempiere (generated) 
- *  @version Release 6.2
+ *  @version Release 10
  */
 @SuppressWarnings("all")
 public interface I_KDB_KanbanBoard 
@@ -32,7 +32,7 @@ public interface I_KDB_KanbanBoard
     /** TableName=KDB_KanbanBoard */
     public static final String Table_Name = "KDB_KanbanBoard";
 
-    /** AD_Table_ID=1000015 */
+    /** AD_Table_ID=1000000 */
     public static final int Table_ID = MTable.getTable_ID(Table_Name);
 
     KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);
@@ -79,6 +79,44 @@ public interface I_KDB_KanbanBoard
 
 	public org.compiere.model.I_AD_Table getAD_Table() throws RuntimeException;
 
+    /** Column name ColumnSQL */
+    public static final String COLUMNNAME_ColumnSQL = "ColumnSQL";
+
+	/** Set Column SQL.
+	  * Virtual Column (r/o)
+	  */
+	public void setColumnSQL (String ColumnSQL);
+
+	/** Get Column SQL.
+	  * Virtual Column (r/o)
+	  */
+	public String getColumnSQL();
+
+	/** Column name AD_Window_ID */
+    public static final String COLUMNNAME_AD_Window_ID = "AD_Window_ID";
+
+	/** Set Window.
+	  * Data entry or display window
+	  */
+	public void setAD_Window_ID (int AD_Window_ID);
+
+	/** Get Window.
+	  * Data entry or display window
+	  */
+	public int getAD_Window_ID();
+
+	public org.compiere.model.I_AD_Window getAD_Window() throws RuntimeException;
+
+
+    /** Column name CreateStatuses */
+    public static final String COLUMNNAME_CreateStatuses = "CreateStatuses";
+
+	/** Set Create Statuses	  */
+	public void setCreateStatuses (String CreateStatuses);
+
+	/** Get Create Statuses	  */
+	public String getCreateStatuses();
+
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";
 
@@ -94,15 +132,6 @@ public interface I_KDB_KanbanBoard
 	  * User who created this records
 	  */
 	public int getCreatedBy();
-
-    /** Column name CreateStatuses */
-    public static final String COLUMNNAME_CreateStatuses = "CreateStatuses";
-
-	/** Set Create Statuses	  */
-	public void setCreateStatuses (String CreateStatuses);
-
-	/** Get Create Statuses	  */
-	public String getCreateStatuses();
 
     /** Column name Description */
     public static final String COLUMNNAME_Description = "Description";

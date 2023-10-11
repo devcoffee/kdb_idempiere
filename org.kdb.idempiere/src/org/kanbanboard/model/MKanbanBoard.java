@@ -113,6 +113,10 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 	public boolean isRefList() {
 		return getKDB_ColumnList_ID() != 0;
 	}
+	
+	public boolean isColumnSQL() {
+		return !Util.isEmpty(getColumnSQL());
+	}
 
 	public MColumn getStatusColumn() {
 		int columnId = 0;
@@ -375,8 +379,12 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		
 		sqlSelect.append(keyColumn);
 		sqlSelect.append(",");
-		sqlSelect.append(getColumnSQLQuery(getStatusColumn()));
-
+		
+		if(isColumnSQL()) {
+			sqlSelect.append("(").append(getColumnSQL()).append(")");
+		} else {
+			sqlSelect.append(getColumnSQLQuery(getStatusColumn()));
+		}
 		if (hasPriorityOrder()) {
 			sqlSelect.append(", " + getKDB_PrioritySQL());
 			priorityColumnIndex = lastColumnIndex++;
@@ -402,18 +410,23 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 	
 	private String getFullWhereClause() {
 		StringBuilder whereClause = new StringBuilder();
-		MColumn column = getStatusColumn();
 
 		whereClause.append(" WHERE ");
 
 		if (getWhereClause() != null)
 			whereClause.append(getWhereClause()+" AND ");
 
-		if (column.isVirtualColumn()) {
-			whereClause.append("(").append(column.getColumnSQL()).append(")");
+		if(isColumnSQL()) {
+			whereClause.append("(").append(getColumnSQL()).append(")");
 		} else {
-			whereClause.append(column.getColumnName());
+			MColumn column = getStatusColumn();
+			if (column.isVirtualColumn()) {
+				whereClause.append("(").append(column.getColumnSQL()).append(")");
+			} else {
+				whereClause.append(column.getColumnName());
+			}
 		}
+		
 		whereClause.append(" IN ");
 
 		whereClause.append(getInValues());
@@ -501,7 +514,8 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		
 		// Allow only advanced users to display SQL results in the Kanban Board
 		String kanbanCardContent = getKDB_KanbanCard();
-		if (kanbanCardContent != null && kanbanCardContent.contains("@SQL=")) {
+		String columnSql = getColumnSQL();
+		if ((kanbanCardContent != null && kanbanCardContent.contains("@SQL=")) || !Util.isEmpty(columnSql) ) {
 			MRole role = MRole.getDefault();
 			if (!role.isAccessAdvanced()) {
 				log.saveError("Error", Msg.getMsg(getCtx(), "ActionNotAllowedHere"));
@@ -509,10 +523,17 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 			}
 		}
 		
+		// Text Reference doesn't go to the context, so we had to have a eventhandler to ensure
+		if(!Util.isEmpty(columnSql) && (getKDB_ColumnList_ID() > 0 || getKDB_ColumnTable_ID() > 0)) {
+			log.saveError("Error", Msg.getMsg(getCtx(), "KDB_SaveErrorColumnSql"));
+			return false;
+		}
+		
 		// Can't change status related data unless no status child 
 		if (!newRecord && (is_ValueChanged(COLUMNNAME_AD_Table_ID) || 
 				is_ValueChanged(COLUMNNAME_KDB_ColumnList_ID) || 
-						is_ValueChanged(COLUMNNAME_KDB_ColumnTable_ID))) {
+						is_ValueChanged(COLUMNNAME_KDB_ColumnTable_ID) || 
+						is_ValueChanged(COLUMNNAME_ColumnSQL))) {
 			String sql = "SELECT COUNT(*) FROM KDB_KanbanStatus WHERE KDB_KanbanBoard_ID=?";
 			int noStatus = DB.getSQLValue(get_TrxName(), sql, getKDB_KanbanBoard_ID());
 			if (noStatus > 0) {

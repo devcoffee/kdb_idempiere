@@ -170,14 +170,12 @@ public class KanbanBoardProcessController {
     	
     	if (processType.equals(CARD_PROCESS)) {
     		// Record-ID - Kanban Board -ID
-    		saveKeys.add(new KeyNamePair(referenceID, Integer.toString(kanbanBoard.getKDB_KanbanBoard_ID())));
+    		saveKeys.add ( new KeyNamePair(referenceID, Integer.toString(kanbanBoard.getAD_Table_ID())));
     	} else if(processType.equals(STATUS_PROCESS)) {
-    		// - Status ID -- (Table Reference ID)
-    		String statusValue = null;
-    		if (kanbanBoard.getStatus(referenceID) != null)
-    			statusValue = kanbanBoard.getStatus(referenceID).getStatusValue();
-    		
-    		saveKeys.add(new KeyNamePair(referenceID, statusValue));
+    		// - Status ID -- (Table Reference ID)    		
+    		for(int i=0; i<kanbanBoard.getStatus(referenceID).getQueuedRecords().size(); i++){
+    			saveKeys.add(new KeyNamePair(kanbanBoard.getStatus(referenceID).getQueuedRecords().get(i).getRecordID(),Integer.toString(kanbanBoard.getAD_Table_ID())));
+    		}
     	} else if (processType.equals(BOARD_PROCESS)) {
     		//Kanban Board ID - Table ID
     		saveKeys.add (new KeyNamePair(kanbanBoard.getKDB_KanbanBoard_ID(), Integer.toString(kanbanBoard.getAD_Table_ID())));

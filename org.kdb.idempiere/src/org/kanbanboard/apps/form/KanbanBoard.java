@@ -84,6 +84,10 @@ public class KanbanBoard {
 		return kanbanBoard.getBackgroundColor();
 	}
 
+	public int getAD_Window_ID() {
+		return kanbanBoard.getAD_Window_ID();
+	}
+	
 	public KeyNamePair[] getProcessList() {
 		String sql = null;
 		KeyNamePair[] list;
@@ -247,6 +251,8 @@ public class KanbanBoard {
 
 	public boolean swapCard(MKanbanStatus startStatus, MKanbanStatus endStatus, MKanbanCard card) {
 
+		if(kanbanBoard.isColumnSQL())
+			return false;
 		boolean statusChanged = card.changeStatus(kanbanBoard.getStatusColumnName(), endStatus.getStatusValue());
 		if (statusChanged) {
 			startStatus.removeRecord(card);
