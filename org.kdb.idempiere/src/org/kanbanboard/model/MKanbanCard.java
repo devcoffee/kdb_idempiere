@@ -253,7 +253,7 @@ public class MKanbanCard {
 
 		String inStr = text;
 		String token;
-		String sql; //devCoffee - 5377
+		String sql; 
 		StringBuilder outStr = new StringBuilder();
 
 		int i = inStr.indexOf('@');
@@ -261,7 +261,7 @@ public class MKanbanCard {
 			outStr.append(inStr.substring(0, i));			// up to @
 			inStr = inStr.substring(i+1, inStr.length());	// from first @
 			
-			//devCoffee - 5377 - Check if is sql
+			// Check if is sql
 			//Changed () to ENDSQL to support sub queries and be more robust
 			if (inStr.substring(0, 4).equals("SQL=")) {
 				if (inStr.indexOf("ENDSQL") == -1) {
@@ -381,7 +381,7 @@ public class MKanbanCard {
 		return value.toString();
 	}	//	parseVariable
 	
-	// devCoffee - 5377
+	
 	private String getTextByQuery(String sql) {
 		PreparedStatement ps = null;
 		try {
