@@ -23,7 +23,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for KDB_KanbanBoard
  *  @author iDempiere (generated) 
- *  @version Release 10
+ *  @version Release 11
  */
 @SuppressWarnings("all")
 public interface I_KDB_KanbanBoard 
@@ -79,20 +79,7 @@ public interface I_KDB_KanbanBoard
 
 	public org.compiere.model.I_AD_Table getAD_Table() throws RuntimeException;
 
-    /** Column name ColumnSQL */
-    public static final String COLUMNNAME_ColumnSQL = "ColumnSQL";
-
-	/** Set Column SQL.
-	  * Virtual Column (r/o)
-	  */
-	public void setColumnSQL (String ColumnSQL);
-
-	/** Get Column SQL.
-	  * Virtual Column (r/o)
-	  */
-	public String getColumnSQL();
-
-	/** Column name AD_Window_ID */
+    /** Column name AD_Window_ID */
     public static final String COLUMNNAME_AD_Window_ID = "AD_Window_ID";
 
 	/** Set Window.
@@ -107,6 +94,18 @@ public interface I_KDB_KanbanBoard
 
 	public org.compiere.model.I_AD_Window getAD_Window() throws RuntimeException;
 
+    /** Column name ColumnSQL */
+    public static final String COLUMNNAME_ColumnSQL = "ColumnSQL";
+
+	/** Set Column SQL.
+	  * Virtual Column (r/o)
+	  */
+	public void setColumnSQL (String ColumnSQL);
+
+	/** Get Column SQL.
+	  * Virtual Column (r/o)
+	  */
+	public String getColumnSQL();
 
     /** Column name CreateStatuses */
     public static final String COLUMNNAME_CreateStatuses = "CreateStatuses";
@@ -171,6 +170,15 @@ public interface I_KDB_KanbanBoard
 	  * The record is active in the system
 	  */
 	public boolean isActive();
+
+    /** Column name IsEnableMoveButtons */
+    public static final String COLUMNNAME_IsEnableMoveButtons = "IsEnableMoveButtons";
+
+	/** Set Enable Move Buttons	  */
+	public void setIsEnableMoveButtons (boolean IsEnableMoveButtons);
+
+	/** Get Enable Move Buttons	  */
+	public boolean isEnableMoveButtons();
 
     /** Column name IsHtml */
     public static final String COLUMNNAME_IsHtml = "IsHtml";

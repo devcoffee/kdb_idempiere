@@ -23,16 +23,16 @@ import org.compiere.model.*;
 import org.compiere.util.KeyNamePair;
 
 /** Generated Model for KDB_KanbanBoard
- *  @author iDempiere (generated) 
- *  @version Release 10 - $Id$ */
+ *  @author iDempiere (generated)
+ *  @version Release 11 - $Id$ */
 @org.adempiere.base.Model(table="KDB_KanbanBoard")
-public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persistent 
+public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persistent
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20230413L;
+	private static final long serialVersionUID = 20240509L;
 
     /** Standard Constructor */
     public X_KDB_KanbanBoard (Properties ctx, int KDB_KanbanBoard_ID, String trxName)
@@ -41,6 +41,8 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
       /** if (KDB_KanbanBoard_ID == 0)
         {
 			setAD_Table_ID (0);
+			setIsEnableMoveButtons (false);
+// N
 			setIsHtml (false);
 // N
 			setKDB_KanbanBoard_ID (0);
@@ -55,6 +57,40 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
       /** if (KDB_KanbanBoard_ID == 0)
         {
 			setAD_Table_ID (0);
+			setIsEnableMoveButtons (false);
+// N
+			setIsHtml (false);
+// N
+			setKDB_KanbanBoard_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_KDB_KanbanBoard (Properties ctx, String KDB_KanbanBoard_UU, String trxName)
+    {
+      super (ctx, KDB_KanbanBoard_UU, trxName);
+      /** if (KDB_KanbanBoard_UU == null)
+        {
+			setAD_Table_ID (0);
+			setIsEnableMoveButtons (false);
+// N
+			setIsHtml (false);
+// N
+			setKDB_KanbanBoard_ID (0);
+			setName (null);
+        } */
+    }
+
+    /** Standard Constructor */
+    public X_KDB_KanbanBoard (Properties ctx, String KDB_KanbanBoard_UU, String trxName, String ... virtualColumns)
+    {
+      super (ctx, KDB_KanbanBoard_UU, trxName, virtualColumns);
+      /** if (KDB_KanbanBoard_UU == null)
+        {
+			setAD_Table_ID (0);
+			setIsEnableMoveButtons (false);
+// N
 			setIsHtml (false);
 // N
 			setKDB_KanbanBoard_ID (0);
@@ -69,7 +105,7 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
     }
 
     /** AccessLevel
-      * @return 6 - System - Client 
+      * @return 6 - System - Client
       */
     protected int get_AccessLevel()
     {
@@ -118,22 +154,6 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 		return ii.intValue();
 	}
 
-	/** Set Column SQL.
-		@param ColumnSQL Virtual Column (r/o)
-	*/
-	public void setColumnSQL (String ColumnSQL)
-	{
-		set_Value (COLUMNNAME_ColumnSQL, ColumnSQL);
-	}
-
-	/** Get Column SQL.
-		@return Virtual Column (r/o)
-	  */
-	public String getColumnSQL()
-	{
-		return (String)get_Value(COLUMNNAME_ColumnSQL);
-	}
-
 	public org.compiere.model.I_AD_Window getAD_Window() throws RuntimeException
 	{
 		return (org.compiere.model.I_AD_Window)MTable.get(getCtx(), org.compiere.model.I_AD_Window.Table_ID)
@@ -160,6 +180,22 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Column SQL.
+		@param ColumnSQL Virtual Column (r/o)
+	*/
+	public void setColumnSQL (String ColumnSQL)
+	{
+		set_Value (COLUMNNAME_ColumnSQL, ColumnSQL);
+	}
+
+	/** Get Column SQL.
+		@return Virtual Column (r/o)
+	  */
+	public String getColumnSQL()
+	{
+		return (String)get_Value(COLUMNNAME_ColumnSQL);
 	}
 
 	/** Set Create Statuses.
@@ -209,6 +245,28 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 		return (String)get_Value(COLUMNNAME_Help);
 	}
 
+	/** Set Enable Move Buttons.
+		@param IsEnableMoveButtons Enable Move Buttons
+	*/
+	public void setIsEnableMoveButtons (boolean IsEnableMoveButtons)
+	{
+		set_Value (COLUMNNAME_IsEnableMoveButtons, Boolean.valueOf(IsEnableMoveButtons));
+	}
+
+	/** Get Enable Move Buttons.
+		@return Enable Move Buttons	  */
+	public boolean isEnableMoveButtons()
+	{
+		Object oo = get_Value(COLUMNNAME_IsEnableMoveButtons);
+		if (oo != null)
+		{
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set HTML.
 		@param IsHtml Text has HTML tags
 	*/
@@ -223,10 +281,10 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 	public boolean isHtml()
 	{
 		Object oo = get_Value(COLUMNNAME_IsHtml);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
@@ -484,7 +542,7 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
     /** Get Record ID/ColumnName
         @return ID/ColumnName pair
       */
-    public KeyNamePair getKeyNamePair() 
+    public KeyNamePair getKeyNamePair()
     {
         return new KeyNamePair(get_ID(), getName());
     }
