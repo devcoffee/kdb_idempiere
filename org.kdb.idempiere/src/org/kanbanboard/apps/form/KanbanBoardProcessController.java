@@ -121,18 +121,20 @@ public class KanbanBoardProcessController {
 	
 	public List<ProcessUIElement> getCardProcessElements() {
 		List<ProcessUIElement> processElements = getProcessElements(cardProcesses);
-
-		ProcessUIElement element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveTop"), KanbanBoardPriorityController.MOVE_TOP_ID);
-		processElements.add(element);
-
-		element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveUp"), KanbanBoardPriorityController.MOVE_UP_ID);
-		processElements.add(element);
 		
-		element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveDown"), KanbanBoardPriorityController.MOVE_DOWN_ID);
-		processElements.add(element);
-		
-		element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveBottom"), KanbanBoardPriorityController.MOVE_BOTTOM_ID);
-		processElements.add(element);
+		if(kanbanBoard.isEnableMoveButtons()) {
+			ProcessUIElement element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveTop"), KanbanBoardPriorityController.MOVE_TOP_ID);
+			processElements.add(element);
+	
+			element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveUp"), KanbanBoardPriorityController.MOVE_UP_ID);
+			processElements.add(element);
+			
+			element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveDown"), KanbanBoardPriorityController.MOVE_DOWN_ID);
+			processElements.add(element);
+			
+			element = getProcessUIElement(Msg.getMsg(Env.getLanguage(Env.getCtx()), "KDB_MoveBottom"), KanbanBoardPriorityController.MOVE_BOTTOM_ID);
+			processElements.add(element);
+		}
 
 		return processElements;
 	}
