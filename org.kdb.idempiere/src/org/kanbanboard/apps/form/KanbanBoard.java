@@ -333,7 +333,7 @@ public class KanbanBoard {
 	
 	protected String getCellCSSStyle(MKanbanCard card) {
 		String colorCSS = card.getCardColor() != null ? getCardColorCSS(card.getCardColor()) : "";
-		return "text-align: left;" + "border-style: outset; " + colorCSS;
+		return "text-align: left;" + colorCSS;
 	}
 	
 	protected boolean kanbanHasProcesses() {
