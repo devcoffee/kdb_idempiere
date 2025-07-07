@@ -713,7 +713,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		cell.appendChild(swimlaneLabel);
 		if (!Util.isEmpty(summary)) {
 			Html htmlCard = new Html();
-	        htmlCard.setContent(WTextEditorDialog.sanitize(summary));
+	        htmlCard.setContent(summary);
 	        cell.appendChild(htmlCard);
 		}
 		cell.setColspan(totalNumberOfColumns);
@@ -733,7 +733,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	private void createCardCell(Row row, MKanbanCard card) {
 		Vlayout cardCell = createCell(card);
 		row.appendCellChild(cardCell);
-		if (isReadWrite())
+		if (!isReadOnly())
 			setCellProps(row.getLastCell(), card);
 		else
 			setOnlyReadCellProps(row.getLastCell(), card);
@@ -742,7 +742,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	private void createQueuedCardCell(Row row, MKanbanCard card) {
 		Vlayout cardCell = createCell(card);
 		row.appendCellChild(cardCell);
-		if (isReadWrite())
+		if (!isReadOnly())
 			setQueuedCellProps(row.getLastCell(), card);
 		else
 			setOnlyReadCellProps(row.getLastCell(), card);
@@ -1254,7 +1254,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
     	final ProcessInfo m_pi = new ProcessInfo(mProcess.getName(), processId, tableId, recordId); 
 		m_pi.setAD_User_ID(Env.getAD_User_ID(Env.getCtx()));
 		m_pi.setAD_Client_ID(Env.getAD_Client_ID(Env.getCtx()));
-		MPInstance instance = new MPInstance(Env.getCtx(), processId, recordId); 
+		MPInstance instance = new MPInstance(Env.getCtx(), processId, -1, 0, null);
 		instance.saveEx();
 		final int pInstanceID = instance.getAD_PInstance_ID();
 		// Execute Process

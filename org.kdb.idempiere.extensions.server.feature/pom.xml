@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.kdb.idempiere.extensions</groupId>
 		<artifactId>org.kdb.idempiere.extensions.parent</artifactId>
-		<version>9.0.3-SNAPSHOT</version>
+		<version>12.0.0-SNAPSHOT</version>
 		<relativePath>../org.kdb.idempiere.extensions.parent/pom.xml</relativePath>
 	</parent>
 	<artifactId>org.kdb.idempiere.extensions.server.feature</artifactId>
