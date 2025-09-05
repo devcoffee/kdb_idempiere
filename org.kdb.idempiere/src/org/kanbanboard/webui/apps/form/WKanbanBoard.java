@@ -343,8 +343,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 				editor.getGridField().getLookup().refresh();
 				Object currentValue = editor.getValue();
 				editor.setValue(null);
-				param.setValue(null);					
-				if (currentValue != null && editor.getGridField().getLookup().containsKeyNoDirect(currentValue)) {
+				param.setValue(null);				
+				if (currentValue != null && editor.getGridField().getLookup().containsKey(currentValue)) {
 					editor.setValue(currentValue);
 					param.setValue(currentValue);	
 				}
