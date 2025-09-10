@@ -26,6 +26,7 @@
 package org.kanbanboard.webui.apps.form;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,7 +62,6 @@ import org.adempiere.webui.session.SessionManager;
 import org.adempiere.webui.theme.ThemeManager;
 import org.adempiere.webui.util.ZKUpdateUtil;
 import org.adempiere.webui.window.Dialog;
-import org.adempiere.webui.window.WTextEditorDialog;
 import org.compiere.model.GridField;
 import org.compiere.model.GridFieldVO;
 import org.compiere.model.MPInstance;
@@ -190,10 +190,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		kForm.setMaximizable(true);
 		kForm.setWidth("100%");
 		kForm.setHeight("100%");
+		kForm.addEventListener(DialogEvents.ON_WINDOW_CLOSE, this);
 		kForm.appendChild (mainLayout);
 		LayoutUtils.addSclass("kanban-board-form-content", mainLayout);  // ?? debe definirse en un css, se puede integrar css en el plugin?
 		kForm.setBorder("normal");
-
+		
 		//North Panel
 		lProcess.setText(Msg.translate(Env.getCtx(), "Process"));
 		if (ThemeManager.isUseFontIconForImage())
@@ -338,18 +339,29 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			if (param.getValue() != null) {
 				editor.setValue(param.getValue());
 			}
+			if(editor.getGridField().getLookup()!=null) {
+				editor.getGridField().getLookup().refresh();
+				Object currentValue = editor.getValue();
+				editor.setValue(null);
+				param.setValue(null);				
+				if (currentValue != null && editor.getGridField().getLookup().containsKey(currentValue)) {
+					editor.setValue(currentValue);
+					param.setValue(currentValue);	
+				}
+			}
+			setNewValueOfContext(param.getValue(),editor.getColumnName());
 			editor.setMandatory(false);
-	        editor.setReadWrite(true);
+	        editor.setReadWrite(!param.get_ValueAsBoolean("IsReadOnly"));
 	        editor.dynamicDisplay();
 	        editor.updateStyle(false);
 	        editor.addValueChangeListener(this);
-
+	        
 	        Label label = editor.getLabel();
 	        //Fix miss label of check box
 	        label.setValue(param.getLabel());
 
 	        m_sEditors.add(editor);
-			mapEditorParameter.put(editor, param);
+	        mapEditorParameter.put(editor, param);
 			if (param.isRange()) {
 				GridFieldVO voF2 = GridFieldVO.createParameter(param.getGridField().getVO());
 				GridField mField2 = new GridField(voF2);
@@ -359,9 +371,9 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 				if (param.getValueTo() != null) {
 					editor2.setValue(param.getValueTo());
 				}
-				
+				setNewValueOfContext(param.getValueTo(),editor.getColumnName()+"_To");
 				editor2.setMandatory(false);
-				editor2.setReadWrite(true);
+				editor2.setReadWrite(!param.get_ValueAsBoolean("IsReadOnly"));
 				editor2.dynamicDisplay();
 				editor2.updateStyle(false);
 				editor2.addValueChangeListener(this);
@@ -870,6 +882,36 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		}
 	} //setStatusProcessMenupopup
 	
+	private void clearParameterContext() {
+		for(WEditor editor:m_sEditors) {
+			if(editor ==null)
+				continue;
+			setNewValueOfContext(null, editor.getColumnName());
+		}
+		for(WEditor editor:m_sEditorsTo) {
+			if(editor ==null)
+				continue;
+			setNewValueOfContext(null,editor.getColumnName()+"_To");
+		}
+	}
+	
+	private void setNewValueOfContext(Object value, String name) {
+		if (value == null)
+			value = new String("");
+
+		if (value instanceof String)
+			Env.setContext(Env.getCtx(),name, (String) value);
+		else if (value instanceof Integer)
+			Env.setContext(Env.getCtx(), name,
+					((Integer) value).intValue());
+		else if (value instanceof Boolean)
+			Env.setContext(Env.getCtx(), name,
+					((Boolean) value).booleanValue());
+		else if (value instanceof Timestamp)
+			Env.setContext(Env.getCtx(), name, (Timestamp) value);
+		else
+			Env.setContext(Env.getCtx(), name, value.toString());
+	}
 	/**
 	 * Set Card Menupopup if there are card scope processes
 	 */
@@ -1038,6 +1080,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			if (kanbanBoardId != -1) {
 				repaintCards();
 			}
+		} else if(DialogEvents.ON_WINDOW_CLOSE.equals(e.getName())) {
+			clearParameterContext();
 		}
 	}//onEvent
 	
@@ -1164,7 +1208,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	
 	private void selectKanbanBoard() {
 		if (kanbanListbox.getSelectedIndex() != -1) {
-
+			clearParameterContext();
 			KeyNamePair kanbanKeyNamePair = null;
 			kanbanBoardId = -1;
 			kanbanKeyNamePair = (KeyNamePair) kanbanListbox.getSelectedItem().toKeyNamePair();	
@@ -1190,9 +1234,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			if (mapEditorParameter.containsKey(changedEditor)) {
 				MKanbanParameter changedParam = mapEditorParameter.get(changedEditor);
 				changedParam.setValue(value);
+				setNewValueOfContext(changedParam.getValue(),changedEditor.getColumnName());
 			} else if (mapEditorToParameter.containsKey(changedEditor)) {
 				MKanbanParameter changedParamTo = mapEditorToParameter.get(changedEditor);
 				changedParamTo.setValueTo(value);
+				setNewValueOfContext(changedParamTo.getValueTo(),changedEditor.getColumnName()+"_To");
 			}
 			repaintCards();
 			if (filterPopup != null)
