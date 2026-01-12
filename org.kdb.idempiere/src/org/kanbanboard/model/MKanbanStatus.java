@@ -63,6 +63,7 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 	private int               cardNumber       = 0;
 	private int 			  queuedCardNumber = 0;
 	private int				  totalCards       = 0;
+	private boolean			  isMoveAll		   = false;
 
 	public MKanbanBoard getKanbanBoard() {
 		return kanbanBoard;
@@ -358,6 +359,14 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 		return isShowOver() || getMaxNumCards() > getRecords().size();
 	}
 	
+	public boolean isMoveAll() {
+		return isMoveAll;
+	}
+
+	public void setMoveAll(boolean isMoveAll) {
+		this.isMoveAll = isMoveAll;
+	}
+
 	public void increaseTotalCardsByOne() {
 		setTotalCards(getTotalCards() + 1);
 	}

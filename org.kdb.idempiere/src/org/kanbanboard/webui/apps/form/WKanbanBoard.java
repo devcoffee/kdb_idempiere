@@ -97,6 +97,7 @@ import org.zkoss.zul.Auxhead;
 import org.zkoss.zul.Auxheader;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.Cell;
+import org.zkoss.zul.Checkbox;
 import org.zkoss.zul.Column;
 import org.zkoss.zul.Columns;
 import org.zkoss.zul.Div;
@@ -529,8 +530,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					else
 						column.setWidth(stdColumnWidth + "px");
 					
-					columns.appendChild(column);
 					column.setAlign("center");
+					Checkbox cbMoveAll = new Checkbox();
+					status.setMoveAll(false);
+					cbMoveAll.addEventListener(Events.ON_CHECK, (event) -> status.setMoveAll(((Checkbox)event.getTarget()).isChecked()) );
+					column.appendChild(cbMoveAll);
 					columns.appendChild(column);
 					if (status.getTotalCards() != 0)
 						column.setLabel(status.getPrintableName()+"("+status.getTotalCards()+")");
@@ -997,7 +1001,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			MKanbanCard card = mapCellColumn.get(e.getTarget());
 			int recordId = card.getRecordID();
 			int AD_Table_ID = getAd_Table_id();
-			int AD_Window_ID =  getAD_Window_ID();;
+			int AD_Window_ID =  getAD_Window_ID();
 			zoom(recordId,AD_Table_ID, AD_Window_ID);
 		} else if (e instanceof DropEvent ) {
 			DropEvent me = (DropEvent) e;
@@ -1022,18 +1026,26 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					endStatus = endField.getBelongingStatus();
 				}
 				
-
-				if (!swapCard(startStatus, endStatus, startField))
-					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), startField.getStatusChangeMessage()));
-				else {
-					//Change swimlane as well if it is active
-					if (getActiveSwimlane() != null) {
-						String endSwimlaneValue = endField != null ? endField.getSwimlaneValue() : mapEmptyCellSwimlane.get(me.getTarget()).getValue();
-						if (!swapSwimlanes(startField, endSwimlaneValue))
-							Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), startField.getStatusChangeMessage()));
-					}
+				StringBuilder message = new StringBuilder();
+				if(startStatus.isMoveAll()) {
+					mapCellColumn.values().stream()
+						.filter(card -> card.getBelongingStatus().equals(startStatus))
+						.forEach(card -> {
+							String msg = changeStatus(me, card, startStatus, endField, endStatus);
+							if(!msg.isEmpty()) {
+								message.append(msg).append("\n");
+							}
+						});
+				} else { 
+					message.append(changeStatus(me, startField, startStatus, endField, endStatus));
+				}
+				
+				if(!message.isEmpty()) { 
+					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), message.toString()));
+				} else {
 					repaintCards();
 				}
+				
 			} else if (me.getTarget() instanceof Row) { //Swim lane Header
 				Row endSwimlane = (Row) me.getTarget();
 				MKanbanCard draggedCard = mapCellColumn.get(startItem);
@@ -1084,6 +1096,23 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			clearParameterContext();
 		}
 	}//onEvent
+
+	private String changeStatus(DropEvent me, MKanbanCard startField, MKanbanStatus startStatus, MKanbanCard endField,
+			MKanbanStatus endStatus) {
+		String message = "";
+		if (!swapCard(startStatus, endStatus, startField))
+			message = startField.getStatusChangeMessage();
+		else {
+			//Change swimlane as well if it is active
+			if (getActiveSwimlane() != null) {
+				String endSwimlaneValue = endField != null ? endField.getSwimlaneValue() : mapEmptyCellSwimlane.get(me.getTarget()).getValue();
+				if (!swapSwimlanes(startField, endSwimlaneValue))
+					message = startField.getStatusChangeMessage();
+			}
+		}
+		
+		return message;
+	}
 	
 	/**
 	 * Lists are Kanban Board list or Swimlane list
