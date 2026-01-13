@@ -24,7 +24,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for KDB_KanbanBoard
  *  @author iDempiere (generated)
- *  @version Release 11 - $Id$ */
+ *  @version Release 12 - $Id$ */
 @org.adempiere.base.Model(table="KDB_KanbanBoard")
 public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persistent
 {
@@ -32,7 +32,7 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20240509L;
+	private static final long serialVersionUID = 20260113L;
 
     /** Standard Constructor */
     public X_KDB_KanbanBoard (Properties ctx, int KDB_KanbanBoard_ID, String trxName)
@@ -47,6 +47,8 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 // N
 			setKDB_KanbanBoard_ID (0);
 			setName (null);
+			setShowInactive (false);
+// N
         } */
     }
 
@@ -63,6 +65,8 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 // N
 			setKDB_KanbanBoard_ID (0);
 			setName (null);
+			setShowInactive (false);
+// N
         } */
     }
 
@@ -79,6 +83,8 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 // N
 			setKDB_KanbanBoard_ID (0);
 			setName (null);
+			setShowInactive (false);
+// N
         } */
     }
 
@@ -95,6 +101,8 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 // N
 			setKDB_KanbanBoard_ID (0);
 			setName (null);
+			setShowInactive (false);
+// N
         } */
     }
 
@@ -561,6 +569,29 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 	public String getOrderByClause()
 	{
 		return (String)get_Value(COLUMNNAME_OrderByClause);
+	}
+
+	/** Set Show Inactive.
+		@param ShowInactive Show Inactive Records
+	*/
+	public void setShowInactive (boolean ShowInactive)
+	{
+		set_Value (COLUMNNAME_ShowInactive, Boolean.valueOf(ShowInactive));
+	}
+
+	/** Get Show Inactive.
+		@return Show Inactive Records
+	  */
+	public boolean isShowInactive()
+	{
+		Object oo = get_Value(COLUMNNAME_ShowInactive);
+		if (oo != null)
+		{
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
+			return "Y".equals(oo);
+		}
+		return false;
 	}
 
 	/** Set Sql WHERE.

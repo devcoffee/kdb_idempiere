@@ -431,7 +431,10 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 
 		whereClause.append(getInValues());
 
-		whereClause.append(" AND AD_Client_ID IN (0, ?) AND IsActive='Y' ");
+		whereClause.append(" AND AD_Client_ID IN (0, ?)");
+		
+		if (!isShowInactive())
+			whereClause.append(" AND IsActive='Y' ");
 
 		String paramWhere = getParamWhere();
 		if (!paramWhere.isEmpty())
