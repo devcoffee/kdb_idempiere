@@ -28,6 +28,7 @@ package org.kanbanboard.model;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -148,7 +149,7 @@ public class MKanbanCard {
 					return false;
 				}
 			}
-			success = m_po.set_ValueOfColumnReturningBoolean(statusColumn, newStatusValue);
+			success = m_po.set_ValueOfColumnReturningBoolean(statusColumn, convertValue(newStatusValue));
 			m_po.saveEx();
 		}
 		return success;
@@ -468,5 +469,18 @@ public class MKanbanCard {
 	public void savePriorityValue(int priorityValue) {
 		m_po.set_ValueOfColumn(priorityColumnName, priorityValue);
 		m_po.saveEx();
+	}
+	
+	public Object convertValue(String newStatusValue) {
+		MColumn statusColumn = kanbanBoard.getStatusColumn();
+		if (statusColumn.getAD_Reference_ID() == DisplayType.List) {
+			return newStatusValue;
+		} else if (statusColumn.getAD_Reference_ID() == DisplayType.Integer) {
+			return Integer.parseInt(newStatusValue);
+		} else if(statusColumn.getAD_Reference_ID() == DisplayType.Date  || statusColumn.getAD_Reference_ID() == DisplayType.DateTime) {
+			return Timestamp.valueOf(newStatusValue);
+		} else {
+			return newStatusValue;
+		}
 	}
 }

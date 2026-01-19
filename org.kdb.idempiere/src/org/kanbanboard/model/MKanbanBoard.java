@@ -29,18 +29,23 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.compiere.model.GridField;
+import org.compiere.model.GridFieldVO;
 import org.compiere.model.MColumn;
 import org.compiere.model.MRefList;
 import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.model.Query;
 import org.compiere.print.MPrintColor;
+import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -69,6 +74,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 	private boolean statusProcessed = false;
 	private String summarySql;
 	private MKanbanSwimlaneConfiguration activeSwimlaneRecord;
+	private List<Object> series = new ArrayList<Object>();
 	
 	private int lastColumnIndex;
 	private int idColumnIndex; 
@@ -79,6 +85,8 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 	//Associated Processes
 	private boolean processRead = false;
 	private List<MKanbanProcess> associatedProcesses = new ArrayList<MKanbanProcess>();
+	private DateTimeFormatter valueFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	private DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
 	//Kanban Parameters
 	private List<MKanbanParameter> parameters = null;
@@ -114,6 +122,10 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		return getKDB_ColumnList_ID() != 0;
 	}
 	
+	public boolean isTableColumn() {
+		return getKDB_ColumnTable_ID() != 0;
+	}
+	
 	public boolean isColumnSQL() {
 		return !Util.isEmpty(getColumnSQL());
 	}
@@ -122,14 +134,21 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		int columnId = 0;
 		if (isRefList())
 			columnId = getKDB_ColumnList_ID();
-		else
+		else if(isTableColumn())
 			columnId = getKDB_ColumnTable_ID();
+		else
+			columnId = getKDB_ColumnSeries_ID();
 		return MColumn.get(columnId);
 	}
 	
 	public String getStatusColumnName() {
 		return getStatusColumn().getColumnName();
 	}
+	
+	public void setSeries(List<Object> series) { 
+		this.series = series;
+	}
+	
 
 	public void setPrintableNames() {
 
@@ -187,12 +206,27 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		if (!statusProcessed) {
 
 			statusProcessed=true;
-
-			statuses = new Query(getCtx(), MKanbanStatus.Table_Name, " KDB_KanbanBoard_ID = ? AND AD_Client_ID IN (0, ?) AND IsActive='Y' ", get_TrxName())
-			.setParameters(new Object[]{getKDB_KanbanBoard_ID(),Env.getAD_Client_ID(Env.getCtx())})
-			.setOnlyActiveRecords(true)
-			.setOrderBy("SeqNo")
- 			.list();
+			
+			if(series != null && series.size() > 0) {
+				for (Object statusValue : series) { 
+					MKanbanStatus status = new MKanbanStatus(getCtx(), 0, null);
+					status.setKDB_KanbanBoard_ID(getKDB_KanbanBoard_ID());
+					String displayValue = statusValue.toString();
+					if(statusValue instanceof Timestamp dateValue) { 
+						statusValue = dateValue.toLocalDateTime().format(valueFormatter);
+						displayValue = dateValue.toLocalDateTime().format(displayFormatter);
+					}
+					status.setName(displayValue);
+					status.setKDB_StatusListValue(statusValue.toString());
+					statuses.add(status);
+				}
+			} else {
+				statuses = new Query(getCtx(), MKanbanStatus.Table_Name, " KDB_KanbanBoard_ID = ? AND AD_Client_ID IN (0, ?) AND IsActive='Y' ", get_TrxName())
+						.setParameters(new Object[]{getKDB_KanbanBoard_ID(),Env.getAD_Client_ID(Env.getCtx())})
+						.setOnlyActiveRecords(true)
+						.setOrderBy("SeqNo")
+			 			.list();
+			}
 			
 			for (MKanbanStatus status : statuses)
 				status.setKanbanBoard(this);
@@ -292,7 +326,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 	 */
 	public void getKanbanCards() {
 
-		if (numberOfCards <= 0) {
+		if (numberOfCards <= 0 && (!isSeries() || (isSeries() && series.size() > 0))) {
 			
 			initIndexes();
 			String sql = getCardsSQLStatement();
@@ -465,7 +499,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 
 		StringBuilder values = new StringBuilder();
 		values.append("(");
-		for (MKanbanStatus status : statuses) {
+		for (MKanbanStatus status : getStatuses()) {
 			if (isRefList)
 				values.append("'"+status.getStatusValue()+"'");
 			else
@@ -722,5 +756,44 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 			}
 		}
 		return false;
+	}
+	
+	public GridField createDateRange(int windowNo) {
+			String sql;
+			if (!Env.isBaseLanguage(Env.getCtx(), getTable().getTableName())){
+				sql = "SELECT * FROM AD_Field_vt WHERE AD_Column_ID=? AND AD_Table_ID=?"
+						+ " AND AD_Language='" + Env.getAD_Language(Env.getCtx()) + "'";
+			} else {
+				sql = "SELECT * FROM AD_Field_v WHERE AD_Column_ID=? AND AD_Table_ID=?";
+			}
+
+			PreparedStatement pstmt = null;
+			ResultSet rs = null;
+			GridField gridField = null;
+			try {
+				pstmt = DB.prepareStatement(sql, null);
+				pstmt.setInt(1, getKDB_ColumnSeries_ID());
+				pstmt.setInt(2, getAD_Table_ID());
+				rs = pstmt.executeQuery();
+				if (rs.next()) {
+					GridFieldVO voF = GridFieldVO.create(Env.getCtx(), 
+							windowNo, 0, 
+							rs.getInt("ad_window_id"), rs.getInt("ad_tab_id"), 
+							false, rs);
+					gridField = new GridField(voF);
+				}
+			} catch (Exception e) {
+				CLogger.get().log(Level.SEVERE, "", e);
+			} finally {
+				DB.close(rs, pstmt);
+				rs = null;
+				pstmt = null;
+			}
+		
+		return gridField;
+	}
+	
+	public boolean isSeries() { 
+		return getKDB_ColumnSeries_ID() > 0;
 	}
 }

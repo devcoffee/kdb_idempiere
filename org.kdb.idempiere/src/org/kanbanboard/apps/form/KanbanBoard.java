@@ -28,6 +28,10 @@ package org.kanbanboard.apps.form;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +40,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.GridField;
 import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
@@ -70,6 +75,7 @@ public class KanbanBoard {
 	private boolean             canRoleUpdate = false;
 	private boolean             roleAccessChecked = false;
 	private String              summarySql = null;		
+	private List<Object> series = new ArrayList<Object>();
 	
 	private KanbanBoardProcessController processController;
 	private KanbanBoardPriorityController priorityController;
@@ -184,14 +190,17 @@ public class KanbanBoard {
 	public void setKanbanBoard(MKanbanBoard kanbanBoard) {
 		this.kanbanBoard = kanbanBoard;
 	}
-
 	public void setKanbanBoard(int kanbanBoardId) {
+		setKanbanBoard(kanbanBoardId, false);
+	}
+	
+	public void setKanbanBoard(int kanbanBoardId, boolean force) {
 		//Check if it's it's a new kanban board or the one already selected
 		if (kanbanBoardId == -1) {
 			kanbanBoard = null;
 			processController = null;
 			priorityController = null;
-		} else if (kanbanBoard == null || kanbanBoardId != kanbanBoard.get_ID()) {
+		} else if (kanbanBoard == null || (kanbanBoardId != kanbanBoard.get_ID() || force)) {
 			kanbanBoard = new MKanbanBoard(Env.getCtx(), kanbanBoardId, null);
 			processController = new KanbanBoardProcessController(kanbanBoard);
 			priorityController = new KanbanBoardPriorityController(kanbanBoard);
@@ -200,6 +209,8 @@ public class KanbanBoard {
 			boardParameters = null;
 			isReadWrite = null;
 			roleAccessChecked = false;
+			if(force)
+				kanbanBoard.setSeries(series);
 			kanbanBoard.setBoardContent();
 			getBoardParameters();
 			kanbanBoard.getKanbanCards();
@@ -207,9 +218,13 @@ public class KanbanBoard {
 			summarySql = null;		
 		}
 	}
+	
+	public void refreshBoard(boolean force) {
+		setKanbanBoard(kanbanBoard.get_ID(), force);
+	}
 
 	public void refreshBoard() {
-		setKanbanBoard(-1);
+		setKanbanBoard(-1, false);
 	}
 	
 	protected void refreshCards() {
@@ -429,5 +444,27 @@ public class KanbanBoard {
 	
 	protected void moveCard(int AD_Process_ID, int referenceID) {
 		priorityController.moveCard(AD_Process_ID, referenceID);
+	}
+	
+	protected GridField createDateFrom(int windowNo) { 
+		return kanbanBoard.createDateRange(windowNo);
+	}
+	
+	protected GridField createDateTo(int windowNo) { 
+		return kanbanBoard.createDateRange(windowNo);
+	}
+	
+	protected boolean isSeries() { 
+		return kanbanBoard.isSeries();
+	}
+	
+	protected void generateSeries(Timestamp from, Timestamp to) { 
+		if (from != null && to != null && !from.after(to)) {
+			ZoneId zone = ZoneId.systemDefault();
+			LocalDate start = from.toInstant().atZone(zone).toLocalDate();
+			LocalDate end = to.toInstant().atZone(zone).toLocalDate();
+			series.clear();
+			start.datesUntil(end.plusDays(1)).forEach(x -> series.add(Timestamp.valueOf(x.atStartOfDay())));
+		}
 	}
 }

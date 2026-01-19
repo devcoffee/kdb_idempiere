@@ -32,7 +32,7 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20260113L;
+	private static final long serialVersionUID = 20260119L;
 
     /** Standard Constructor */
     public X_KDB_KanbanBoard (Properties ctx, int KDB_KanbanBoard_ID, String trxName)
@@ -363,6 +363,33 @@ public class X_KDB_KanbanBoard extends PO implements I_KDB_KanbanBoard, I_Persis
 	public int getKDB_ColumnList_ID()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_KDB_ColumnList_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_AD_Column getKDB_ColumnSeries() throws RuntimeException
+	{
+		return (org.compiere.model.I_AD_Column)MTable.get(getCtx(), org.compiere.model.I_AD_Column.Table_ID)
+			.getPO(getKDB_ColumnSeries_ID(), get_TrxName());
+	}
+
+	/** Set Column Series.
+		@param KDB_ColumnSeries_ID Column Series
+	*/
+	public void setKDB_ColumnSeries_ID (int KDB_ColumnSeries_ID)
+	{
+		if (KDB_ColumnSeries_ID < 1)
+			set_Value (COLUMNNAME_KDB_ColumnSeries_ID, null);
+		else
+			set_Value (COLUMNNAME_KDB_ColumnSeries_ID, Integer.valueOf(KDB_ColumnSeries_ID));
+	}
+
+	/** Get Column Series.
+		@return Column Series	  */
+	public int getKDB_ColumnSeries_ID()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_KDB_ColumnSeries_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();

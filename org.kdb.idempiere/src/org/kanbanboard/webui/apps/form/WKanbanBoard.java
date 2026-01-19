@@ -129,7 +129,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 
 	protected final static String PROCESS_ID_KEY = "processId";
 
-	private CustomForm kForm = new CustomForm();;	
+	private CustomForm kForm = new CustomForm();
 
 	private Borderlayout	mainLayout	= new Borderlayout();
 
@@ -167,6 +167,9 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	private Grid kanbanPanel;
 	private Vlayout centerVLayout;
 	private int totalNumberOfColumns = 0;
+	
+	private WEditor dateFrom;
+	private WEditor dateTo;
 
 	public WKanbanBoard() {
 		super();
@@ -179,7 +182,9 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			windowNo = SessionManager.getAppDesktop().registerWindow(this);
 			dynList();
 			jbInit();
-		} catch (Exception ex){}
+		} catch (Exception ex){
+			ex.printStackTrace();
+		}
 	}
 
 	/**
@@ -213,6 +218,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		kanbanListbox.setHeight("70%");
 		northPanelHbox.appendChild(kanbanListbox);
 		northPanelHbox.appendChild(bRefresh);
+		
 		panel.setHeight("100%");
 		northPanelHbox.setHeight("100%");
 		panel.appendChild(northPanelHbox);
@@ -329,8 +335,22 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		        }
 				boardParamsDiv.appendChild(new Separator("vertical"));
 			}
-
+		
 			northPanelHbox.appendChild(boardParamsDiv);
+		}
+		
+		if (isSeries()) {
+			dateFrom = WebEditorFactory.getEditor(createDateFrom(windowNo), true);
+			dateFrom.addValueChangeListener(this);
+			dateTo = WebEditorFactory.getEditor(createDateTo(windowNo), true);
+			dateTo.addValueChangeListener(this);
+			if (dateFrom != null) {
+				northPanelHbox.appendChild(new Separator("vertical"));
+				northPanelHbox.appendChild(dateFrom.getLabel());
+				northPanelHbox.appendChild(dateFrom.getComponent());
+				northPanelHbox.appendChild(new Label(" - "));
+				northPanelHbox.appendChild(dateTo.getComponent());
+			}
 		}
 	}
 	
@@ -559,7 +579,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 				createRows();	
 				kanbanPanel.appendChild(columns);
 				kanbanPanel.appendChild(auxhead);
-			} else {
+			} else if(!isSeries()){
 				Messagebox.show(Msg.getMsg(Env.getCtx(), "KDB_NoStatuses"));
 			}
 		}
@@ -1259,19 +1279,26 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		if (evt != null && evt.getSource() instanceof WEditor) {
 			WEditor changedEditor = (WEditor)evt.getSource();
 			Object value = evt.getNewValue();
-
-			if (mapEditorParameter.containsKey(changedEditor)) {
-				MKanbanParameter changedParam = mapEditorParameter.get(changedEditor);
-				changedParam.setValue(value);
-				setNewValueOfContext(changedParam.getValue(),changedEditor.getColumnName());
-			} else if (mapEditorToParameter.containsKey(changedEditor)) {
-				MKanbanParameter changedParamTo = mapEditorToParameter.get(changedEditor);
-				changedParamTo.setValueTo(value);
-				setNewValueOfContext(changedParamTo.getValueTo(),changedEditor.getColumnName()+"_To");
+			if (evt.getSource()  != dateFrom && evt.getSource()  != dateTo) { 
+				if (mapEditorParameter.containsKey(changedEditor)) {
+					MKanbanParameter changedParam = mapEditorParameter.get(changedEditor);
+					changedParam.setValue(value);
+					setNewValueOfContext(changedParam.getValue(),changedEditor.getColumnName());
+				} else if (mapEditorToParameter.containsKey(changedEditor)) {
+					MKanbanParameter changedParamTo = mapEditorToParameter.get(changedEditor);
+					changedParamTo.setValueTo(value);
+					setNewValueOfContext(changedParamTo.getValueTo(),changedEditor.getColumnName()+"_To");
+				}
+				repaintCards();
+				if (filterPopup != null)
+					filterPopup.open(bFilter, "after_start");
+			} else {
+				if(dateFrom.getValue() != null && dateTo.getValue() != null) {
+					generateSeries((Timestamp)dateFrom.getValue(), (Timestamp)dateTo.getValue());
+					refreshBoard(true);
+					repaintGrid();
+				}
 			}
-			repaintCards();
-			if (filterPopup != null)
-				filterPopup.open(bFilter, "after_start");
         }
 	} //valueChange
 

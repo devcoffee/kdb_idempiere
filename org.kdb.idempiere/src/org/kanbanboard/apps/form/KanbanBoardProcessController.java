@@ -175,8 +175,8 @@ public class KanbanBoardProcessController {
     		saveKeys.add ( new KeyNamePair(referenceID, Integer.toString(kanbanBoard.getAD_Table_ID())));
     	} else if(processType.equals(STATUS_PROCESS)) {
     		// - Status ID -- (Table Reference ID)    		
-    		for(int i=0; i<kanbanBoard.getStatus(referenceID).getQueuedRecords().size(); i++){
-    			saveKeys.add(new KeyNamePair(kanbanBoard.getStatus(referenceID).getQueuedRecords().get(i).getRecordID(),Integer.toString(kanbanBoard.getAD_Table_ID())));
+    		for(int i=0; i<kanbanBoard.getStatus(referenceID).getRecords().size(); i++){
+    			saveKeys.add(new KeyNamePair(kanbanBoard.getStatus(referenceID).getRecords().get(i).getRecordID(),Integer.toString(kanbanBoard.getAD_Table_ID())));
     		}
     	} else if (processType.equals(BOARD_PROCESS)) {
     		//Kanban Board ID - Table ID

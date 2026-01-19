@@ -210,8 +210,11 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 		String statusValue;
 		if (kanbanBoard.isColumnSQL() || kanbanBoard.isRefList())
 			statusValue =  getKDB_StatusListValue();
-		else
+		else if (kanbanBoard.getKDB_ColumnTable_ID() > 0)
 			statusValue = getKDB_StatusTableID();
+		else 
+			statusValue = getKDB_StatusListValue();
+			
 		return statusValue;
 	}
 
