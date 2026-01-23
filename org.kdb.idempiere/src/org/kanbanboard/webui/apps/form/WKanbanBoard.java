@@ -540,7 +540,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 						totalNumberOfColumns++;
 					}
 					column = new Column();
-					column.setId(Integer.toString(status.get_ID()));
+					column.setId(Integer.toString(status.getKDB_KanbanStatus_ID()));
 					if (menupopup != null) {
 						column.setPopup(getBoardMenupopup());
 					}
@@ -1345,7 +1345,7 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		Integer recordId = 0;
 		Integer tableId = 0;
 
-		if(saveKeys != null &&  processType.equals(KanbanBoard.CARD_PROCESS)){
+		if(saveKeys != null &&  (processType.equals(KanbanBoard.CARD_PROCESS) || processType.equals(KanbanBoard.STATUS_PROCESS))) {
 			recordId = saveKeys.iterator().next().getKey();
 			tableId = Integer.parseInt(saveKeys.iterator().next().getName());
 		}
@@ -1399,12 +1399,14 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
     private void setProcessEnvVariables() {
     	Env.setContext(Env.getCtx(), "#KDB_KanbanBoard_ID", kanbanBoardId);
     	Env.setContext(Env.getCtx(), "#KDB_Params", getKanbanBoard().getParamWhere());
+    	Env.setContext(Env.getCtx(), "#KDB_FullWhereClause" , getKanbanBoard().getFullWhereClause());
     }
     
     private void cleanEnvVariables() {
     	Env.setContext(Env.getCtx(), "#KDB_KanbanBoard_ID", "");
     	Env.setContext(Env.getCtx(), "#KDB_Params", "");
     	Env.setContext(Env.getCtx(), windowNo, "KDB_Record_ID", "");
+    	Env.setContext(Env.getCtx(), "#KDB_FullWhereClause" , "");
     }
     
     /**

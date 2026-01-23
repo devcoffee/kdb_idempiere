@@ -41,6 +41,7 @@ import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.GridField;
+import org.compiere.model.MColumn;
 import org.compiere.model.MRole;
 import org.compiere.model.MTable;
 import org.compiere.model.PO;
@@ -280,7 +281,7 @@ public class KanbanBoard {
 
 		if(kanbanBoard.isColumnSQL())
 			return false;
-		boolean statusChanged = card.changeStatus(kanbanBoard.getStatusColumnName(), endStatus.getStatusValue());
+		boolean statusChanged = card.changeStatus(kanbanBoard.getStatusColumn(), endStatus.getStatusValue());
 		if (statusChanged) {
 			startStatus.removeRecord(card);
 			endStatus.addRecord(card);
@@ -290,7 +291,7 @@ public class KanbanBoard {
 	}
 	
 	protected boolean swapSwimlanes(MKanbanCard card, String newSwimlaneValue) {
-		boolean success = card.changeStatus(getActiveSwimlane().getColumnName(), newSwimlaneValue);
+		boolean success = card.changeStatus(MColumn.get(getActiveSwimlane().getValue()), newSwimlaneValue);
 		if (success) {
 			card.setSwimlaneValue(newSwimlaneValue);
 		}
@@ -426,7 +427,7 @@ public class KanbanBoard {
 	}
 	
 	private boolean completeNextCard(MKanbanCard card, MKanbanStatus completeStatus) {
-		boolean cardCompleted = card.changeStatus(kanbanBoard.getStatusColumnName(), completeStatus.getStatusValue());
+		boolean cardCompleted = card.changeStatus(kanbanBoard.getStatusColumn(), completeStatus.getStatusValue());
 		if (cardCompleted) {
 			completeStatus.addRecord(card);
 			card.setBelongingStatus(completeStatus);

@@ -208,9 +208,11 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 			statusProcessed=true;
 			
 			if(series != null && series.size() > 0) {
+				int id = 0;
 				for (Object statusValue : series) { 
 					MKanbanStatus status = new MKanbanStatus(getCtx(), 0, null);
 					status.setKDB_KanbanBoard_ID(getKDB_KanbanBoard_ID());
+					status.set_ValueNoCheck(MKanbanStatus.COLUMNNAME_KDB_KanbanStatus_ID, --id);
 					String displayValue = statusValue.toString();
 					if(statusValue instanceof Timestamp dateValue) { 
 						statusValue = dateValue.toLocalDateTime().format(valueFormatter);
@@ -442,7 +444,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		return columnQuery.toString();
 	}
 	
-	private String getFullWhereClause() {
+	public String getFullWhereClause() {
 		StringBuilder whereClause = new StringBuilder();
 
 		whereClause.append(" WHERE ");
@@ -495,7 +497,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 		}
 	}
 	
-	private String getInValues() {
+	public String getInValues() {
 
 		StringBuilder values = new StringBuilder();
 		values.append("(");

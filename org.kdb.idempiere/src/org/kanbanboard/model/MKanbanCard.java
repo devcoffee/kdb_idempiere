@@ -128,7 +128,7 @@ public class MKanbanCard {
 		m_po = kanbanBoard.getTable().getPO(recordId, null);
 	}
 
-	public boolean changeStatus(String statusColumn, String newStatusValue) {
+	public boolean changeStatus(MColumn statusColumn, String newStatusValue) {
 
 		if (m_po == null)
 			return false;
@@ -144,12 +144,12 @@ public class MKanbanCard {
 						((DocAction) m_po).getDocStatus().equals(DocAction.STATUS_Voided)||
 						((DocAction) m_po).getDocStatus().equals(DocAction.STATUS_Reversed)||
 						((DocAction) m_po).getDocStatus().equals(DocAction.STATUS_Closed)) &&
-						!MColumn.get(Env.getCtx(), m_po.get_TableName(), statusColumn).isAlwaysUpdateable()) {
+						statusColumn.isAlwaysUpdateable()) {
 					statusChangeMessage = "KDB_CompletedCard";
 					return false;
 				}
 			}
-			success = m_po.set_ValueOfColumnReturningBoolean(statusColumn, convertValue(newStatusValue));
+			success = m_po.set_ValueOfColumnReturningBoolean(statusColumn.getColumnName(), convertValue(statusColumn, newStatusValue));
 			m_po.saveEx();
 		}
 		return success;
@@ -471,8 +471,7 @@ public class MKanbanCard {
 		m_po.saveEx();
 	}
 	
-	public Object convertValue(String newStatusValue) {
-		MColumn statusColumn = kanbanBoard.getStatusColumn();
+	public Object convertValue(MColumn statusColumn, String newStatusValue) {
 		if (statusColumn.getAD_Reference_ID() == DisplayType.List) {
 			return newStatusValue;
 		} else if (statusColumn.getAD_Reference_ID() == DisplayType.Integer) {
