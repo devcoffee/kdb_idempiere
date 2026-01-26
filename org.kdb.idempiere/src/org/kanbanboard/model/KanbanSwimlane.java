@@ -36,6 +36,7 @@ public class KanbanSwimlane {
 	private String label;
 	private String value;
 	private boolean printed;
+	private boolean isMoveAll = false;
 	
 	public KanbanSwimlane(MKanbanSwimlaneConfiguration configurationRecord, String label, String value) {
 		this.configurationRecord = configurationRecord;
@@ -101,5 +102,13 @@ public class KanbanSwimlane {
 	
 	public boolean hasSummary() {
 		return !Util.isEmpty(configurationRecord.getKDB_SummarySQL()) && totalNumberOfCards > 0;
+	}
+
+	public boolean isMoveAll() {
+		return isMoveAll;
+	}
+
+	public void setMoveAll(boolean isMoveAll) {
+		this.isMoveAll = isMoveAll;
 	}
 }

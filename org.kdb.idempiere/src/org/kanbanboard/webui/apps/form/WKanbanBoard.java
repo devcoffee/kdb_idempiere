@@ -666,6 +666,11 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 	private Row createSwimlaneRow(KanbanSwimlane swimlane) {
 		Row row = new Row();
 		createSwinlane(row, swimlane.getComponentLabel(), swimlane.getSummary());
+		Cell cell = (Cell)row.getFirstChild();
+		Checkbox cbMoveAll = new Checkbox();
+		swimlane.setMoveAll(false);
+		cbMoveAll.addEventListener(Events.ON_CHECK, (event) -> swimlane.setMoveAll(((Checkbox)event.getTarget()).isChecked()) );
+		cell.insertBefore(cbMoveAll,cell.getFirstChild());
 		row.setStyle(getSwimlaneCSS());
 		swimlane.setPrinted(true);
 		setCollapsibleProperties(row, swimlane.getValue());
@@ -1069,10 +1074,37 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			} else if (me.getTarget() instanceof Row) { //Swim lane Header
 				Row endSwimlane = (Row) me.getTarget();
 				MKanbanCard draggedCard = mapCellColumn.get(startItem);
-				if (!swapSwimlanes(draggedCard, endSwimlane))
-					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), draggedCard.getStatusChangeMessage()));
-				else 
+				String startSwinLaneValue = draggedCard.getSwimlaneValue();
+				KanbanSwimlane swinlane = getSwimlanes().stream()
+						.filter(swim -> swim.getValue().equals(startSwinLaneValue))
+						.findFirst()
+						.orElse(null);
+				StringBuilder message = new StringBuilder();
+				if(swinlane.isMoveAll()) {
+					mapCellColumn.values().stream()
+						.filter(card -> card.getSwimlaneValue().equals(startSwinLaneValue))
+						.forEach(card -> {
+								if (!swapSwimlanes(card, endSwimlane)) {
+									String msg = card.getStatusChangeMessage();
+									if (!msg.isEmpty()) {
+										message.append(msg).append("\n");
+									}
+								}
+						});
+				} else { 
+					if(!swapSwimlanes(draggedCard, endSwimlane)) { 
+						String messageStr = draggedCard.getStatusChangeMessage();
+						if(!messageStr.isEmpty()) {
+							message.append(messageStr);
+						}
+					}
+				}
+				
+				if(!message.isEmpty()) { 
+					Dialog.warn(windowNo, Msg.parseTranslation(Env.getCtx(), message.toString()));
+				} else {
 					repaintCards();
+				}
 			}
 		} else if (isClickOnBoardProcess(e)) {
 			Button clickedButton = (Button) e.getTarget();
@@ -1346,7 +1378,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		Integer tableId = 0;
 
 		if(saveKeys != null &&  (processType.equals(KanbanBoard.CARD_PROCESS) || processType.equals(KanbanBoard.STATUS_PROCESS))) {
-			recordId = saveKeys.iterator().next().getKey();
+			if(processType.equals(KanbanBoard.CARD_PROCESS))
+				recordId = saveKeys.iterator().next().getKey();
 			tableId = Integer.parseInt(saveKeys.iterator().next().getName());
 		}
 		
