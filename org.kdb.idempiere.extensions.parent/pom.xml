@@ -149,6 +149,12 @@
 				    <id>zkoss</id>
 				    <url>http://mavensync.zkoss.org/maven2</url>
 			    </repository>
+
+				<repository>
+                    <id>Redhat-GA</id>
+                    <name>Redhat GA</name>
+                    <url>https://maven.repository.redhat.com/ga/</url>
+                </repository>
 			</repositories>
 			<build>
 				<plugins>
