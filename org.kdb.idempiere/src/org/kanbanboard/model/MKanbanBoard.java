@@ -209,7 +209,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 			
 			if(series != null && series.size() > 0) {
 				int id = 0;
-				for (Object statusValue : series) { 
+				for (Object statusValue : series) {
 					MKanbanStatus status = new MKanbanStatus(getCtx(), 0, null);
 					status.setKDB_KanbanBoard_ID(getKDB_KanbanBoard_ID());
 					status.set_ValueNoCheck(MKanbanStatus.COLUMNNAME_KDB_KanbanStatus_ID, --id);
@@ -218,6 +218,7 @@ public class MKanbanBoard extends X_KDB_KanbanBoard {
 						statusValue = dateValue.toLocalDateTime().format(valueFormatter);
 						displayValue = dateValue.toLocalDateTime().format(displayFormatter);
 					}
+					status.setIsShowOver(true);
 					status.setName(displayValue);
 					status.setKDB_StatusListValue(statusValue.toString());
 					statuses.add(status);
