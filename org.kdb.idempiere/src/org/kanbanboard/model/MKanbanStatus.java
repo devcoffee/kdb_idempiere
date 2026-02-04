@@ -471,5 +471,53 @@ public class MKanbanStatus extends X_KDB_KanbanStatus {
 		int clickedIndex = getRecords().indexOf(card);
 		return clickedIndex < getRecords().size() - 1 ? getRecords().get(clickedIndex+1) : null;
 	}
+	
+	public String getSummary(KanbanSwimlane swimlane) {
+
+	    String summarySql = kanbanBoard.getSummarySql();
+	    String msgValue = kanbanBoard.get_Translation(MKanbanBoard.COLUMNNAME_KDB_SummaryMsg);
+
+	    if (summarySql == null || getMaxNumCards() <= 0)
+	        return null;
+
+	    String recordIds = getSwimlaneStatusRecordsID(swimlane);
+	    if (recordIds.isEmpty())
+	        return null;
+
+	    summarySql = KanbanSQLUtils.replaceTokenWithValue(
+	            summarySql,
+	            STATUS_SUMMARY_TOKEN,
+	            "'" + getStatusValue() + "'"
+	    );
+
+	    summarySql = KanbanSQLUtils.replaceTokenWithValue(
+	            summarySql,
+	            MKanbanBoard.RECORDS_IDS,
+	            recordIds
+	    );
+
+	    return KanbanSQLUtils.getSummary(summarySql, msgValue);
+	}
+
+	private String getSwimlaneStatusRecordsID(KanbanSwimlane swimlane) {
+
+	    List<MKanbanCard> cards = getAllSwimlaneCards(swimlane);
+	    if (cards == null || cards.isEmpty())
+	        return "";
+
+	    StringBuilder recordIds = new StringBuilder();
+
+	    for (MKanbanCard card : cards) {
+	        recordIds.append("'")
+	                 .append(card.getRecordID())
+	                 .append("',");
+	    }
+
+	    if (recordIds.length() > 0)
+	        recordIds.setLength(recordIds.length() - 1); 
+
+	    return recordIds.toString();
+	}
+
 
 }

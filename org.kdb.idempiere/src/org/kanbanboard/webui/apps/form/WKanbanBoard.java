@@ -626,8 +626,9 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 
 		for (KanbanSwimlane swimlane : getSwimlanes()) {
 			if (!swimlane.isPrinted()) {
-				Row swimlaneRow = createSwimlaneRow(swimlane);
+				Row swimlaneRow = new Row();
 				rows.appendChild(swimlaneRow);
+				createSwimlaneRow(swimlaneRow,swimlane);
 			}
 			while (swimlane.getTotalNumberOfCards() > 0) {
 				row = new Row();
@@ -745,20 +746,6 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 			createEmptyCell(row, status);
 		}
 		createEmptyCell(row, status);
-	}
-	
-	private void createSwinlane(Row row, String label, String summary) {
-		Cell cell = new Cell();
-		Label swimlaneLabel = new Label(label+" ");
-		cell.setParent(row);
-		cell.appendChild(swimlaneLabel);
-		if (!Util.isEmpty(summary)) {
-			Html htmlCard = new Html();
-	        htmlCard.setContent(summary);
-	        cell.appendChild(htmlCard);
-		}
-		cell.setColspan(totalNumberOfColumns);
-		row.appendChild(cell);
 	}
 	
 	private void createEmptyCell(Row row, MKanbanStatus status, KanbanSwimlane swimlane) {
@@ -1506,5 +1493,37 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		for (Component component : childsToRemove)
 			northPanelHbox.removeChild(component);
 	}
+	
+	private void createSwinlane(Row row, KanbanSwimlane swimlane) {
+
+		  Cell titleCell = new Cell();
+		    titleCell.setColspan(totalNumberOfColumns);
+		    titleCell.setStyle("padding:6px 4px;font-weight:bold;");
+		    titleCell.appendChild(new Label(swimlane.getComponentLabel()));
+		    row.appendChild(titleCell);
+		    
+		    Row summaryRow = new Row();
+		    summaryRow.setStyle("background:#f7f7f7;");
+		    
+		    for (MKanbanStatus status : getStatuses()) {
+		    	 if (status.hasQueue()) {
+		             summaryRow.appendChild(new Cell()); // célula da fila
+		         }
+		    	 
+		    	 Cell statusCell = new Cell();
+		         statusCell.setStyle("text-align:center;font-size:11px;padding:4px;");
+
+		         String summary = status.getSummary(swimlane);
+		         if (!Util.isEmpty(summary)) {
+		             Html html = new Html();
+		             html.setContent(summary);
+		             statusCell.appendChild(html);
+		         }
+
+		         summaryRow.appendChild(statusCell);
+		    }
+		    row.getParent().appendChild(summaryRow);
+	}
+
 }
 
