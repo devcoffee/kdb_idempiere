@@ -664,9 +664,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		}
 	}
 	
-	private Row createSwimlaneRow(KanbanSwimlane swimlane) {
-		Row row = new Row();
-		createSwinlane(row, swimlane.getComponentLabel(), swimlane.getSummary());
+	private Row createSwimlaneRow(Row row,KanbanSwimlane swimlane) {
+		createSwinlane(row,swimlane);
 		Cell cell = (Cell)row.getFirstChild();
 		Checkbox cbMoveAll = new Checkbox();
 		swimlane.setMoveAll(false);
