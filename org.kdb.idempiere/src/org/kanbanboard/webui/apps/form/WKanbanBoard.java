@@ -1502,15 +1502,15 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		    row.appendChild(titleCell);
 		    
 		    Row summaryRow = new Row();
-		    summaryRow.setStyle("background:#f7f7f7;");
+		    summaryRow.setStyle("background-color: #0093F9;");
 		    
 		    for (MKanbanStatus status : getStatuses()) {
 		    	 if (status.hasQueue()) {
-		             summaryRow.appendChild(new Cell()); // célula da fila
+		             summaryRow.appendChild(new Cell());
 		         }
 		    	 
 		    	 Cell statusCell = new Cell();
-		         statusCell.setStyle("text-align:center;font-size:11px;padding:4px;");
+		         statusCell.setStyle("text-align:left;font-size:11px;padding:4px;color:white;");
 
 		         String summary = status.getSummary(swimlane);
 		         if (!Util.isEmpty(summary)) {
