@@ -576,8 +576,8 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 					}
 				}
 				columns.setSizable(true);
-				createRows();	
 				kanbanPanel.appendChild(columns);
+				createRows();	
 				kanbanPanel.appendChild(auxhead);
 			} else if(!isSeries()){
 				Messagebox.show(Msg.getMsg(Env.getCtx(), "KDB_NoStatuses"));
@@ -615,51 +615,146 @@ public class WKanbanBoard extends KanbanBoard implements IFormController, EventL
 		Rows rows = kanbanPanel.newRows();
 		resetStatusProperties();
 		if (paintSwimlanes()) {
-			createRowsWithSwimlanes(rows);
+			createRowsWithSwimlanes(rows, MSysConfig.getBooleanValue("KDB_SCROLLING_BY_SWINLANE", false, Env.getAD_Client_ID(Env.getCtx()), Env.getAD_Org_ID(Env.getCtx())));
 		} else {
 			createRegularRows(rows);
 		}
 	}//createRows
 	
-	private void createRowsWithSwimlanes(Rows rows) {
-		Row row;
+	private void createRowsWithSwimlanes(Rows rows, boolean isScrollingBySwinLane) {
+		
+		if(isScrollingBySwinLane) {
+			kanbanPanel.setSizedByContent(false);
+			kanbanPanel.setSpan("false");
+			kanbanPanel.setStyle("table-layout: fixed; width: 100%;");
 
-		for (KanbanSwimlane swimlane : getSwimlanes()) {
-			if (!swimlane.isPrinted()) {
-				Row swimlaneRow = new Row();
-				rows.appendChild(swimlaneRow);
-				createSwimlaneRow(swimlaneRow,swimlane);
-			}
-			while (swimlane.getTotalNumberOfCards() > 0) {
-				row = new Row();
-				for (MKanbanStatus status : getStatuses()) {
-					setRowStyle(row);
-					if (!status.hasMoreCards(swimlane)) {
-						createStatusCellWithNoCards(row, status, swimlane);
+			for (KanbanSwimlane swimlane : getSwimlanes()) {
+				if (!swimlane.isPrinted()) {
+					Row swimlaneRow = new Row();
+					rows.appendChild(swimlaneRow);
+					createSwimlaneRow(swimlaneRow, swimlane);
+				}
+
+				Row dataRow = new Row();
+				Cell dataCell = new Cell();
+				dataCell.setColspan(totalNumberOfColumns);
+				dataCell.setStyle("padding: 0; background: transparent; border: none;");
+
+				Div scrollContainer = new Div();
+				scrollContainer.setStyle("overflow-y: auto; max-height: 30vh; width: 100%; scrollbar-gutter: stable;");
+
+				Grid innerGrid = new Grid();
+				innerGrid.makeNoStrip();
+				innerGrid.setHflex("1"); 
+				innerGrid.setStyle("border: none; table-layout: fixed; width: 100%; background: transparent;");
+
+				Columns innerColumns = new Columns();
+				for (Component comp : kanbanPanel.getColumns().getChildren()) {
+					Column parentCol = (Column) comp;
+					Column childCol = new Column();
+					
+					String parentWidth = parentCol.getWidth();
+					
+					if (parentWidth != null && parentWidth.contains("%")) {
+						String numericValue = parentWidth.replace("%", "").trim();
+						
+						parentCol.setWidth(null); 
+						parentCol.setHflex(numericValue); 
+						childCol.setHflex(numericValue);
+						
+					} else if (parentWidth != null && parentWidth.contains("px")) {
+						childCol.setWidth(parentWidth);
 					} else {
-						if (status.hasQueue()) {
-							if (!status.hasMoreQueuedCards(swimlane)) {
-								createEmptyCell(row, status, swimlane);
-								createCardCell(row, status.getCard(swimlane));
-								swimlane.removeOneCard();
-							} else {
-								createQueuedCardCell(row, status.getQueuedCard(swimlane));
-								swimlane.removeOneCard();
-								if (status.hasMoreStatusCards(swimlane)) {
+						parentCol.setHflex("1");
+						childCol.setHflex("1");
+					}
+					
+					childCol.setAlign(parentCol.getAlign());
+					childCol.setStyle("padding: 0px; border: none; height: 0px; overflow: hidden; line-height: 0px;");
+					innerColumns.appendChild(childCol);
+				}
+				innerGrid.appendChild(innerColumns);
+
+				Rows innerRows = new Rows();
+				innerGrid.appendChild(innerRows);
+
+				while (swimlane.getTotalNumberOfCards() > 0) {
+					Row row = new Row();
+					for (MKanbanStatus status : getStatuses()) {
+						setRowStyle(row);
+						if (!status.hasMoreCards(swimlane)) {
+							createStatusCellWithNoCards(row, status, swimlane);
+						} else {
+							if (status.hasQueue()) {
+								if (!status.hasMoreQueuedCards(swimlane)) {
+									createEmptyCell(row, status, swimlane);
 									createCardCell(row, status.getCard(swimlane));
 									swimlane.removeOneCard();
 								} else {
-									createEmptyCell(row, status, swimlane);
+									createQueuedCardCell(row, status.getQueuedCard(swimlane));
+									swimlane.removeOneCard();
+									if (status.hasMoreStatusCards(swimlane)) {
+										createCardCell(row, status.getCard(swimlane));
+										swimlane.removeOneCard();
+									} else {
+										createEmptyCell(row, status, swimlane);
+									}
 								}
+							} else {
+								createCardCell(row, status.getCard(swimlane));
+								swimlane.removeOneCard();
 							}
-						} else {
-							createCardCell(row, status.getCard(swimlane));
-							swimlane.removeOneCard();
 						}
 					}
+					innerRows.appendChild(row);
 				}
-				rows.appendChild(row);
-				swimlaneRowsMap.get(swimlane.getValue()).add(row);
+
+				scrollContainer.appendChild(innerGrid);
+				dataCell.appendChild(scrollContainer);
+				dataRow.appendChild(dataCell);
+				rows.appendChild(dataRow);
+				
+				swimlaneRowsMap.get(swimlane.getValue()).add(dataRow);
+			}
+		} else {
+			Row row;
+			for (KanbanSwimlane swimlane : getSwimlanes()) {
+				if (!swimlane.isPrinted()) {
+					Row swimlaneRow = new Row();
+					rows.appendChild(swimlaneRow);
+					createSwimlaneRow(swimlaneRow,swimlane);
+				}
+				while (swimlane.getTotalNumberOfCards() > 0) {
+					row = new Row();
+					for (MKanbanStatus status : getStatuses()) {
+						setRowStyle(row);
+						if (!status.hasMoreCards(swimlane)) {
+							createStatusCellWithNoCards(row, status, swimlane);
+						} else {
+							if (status.hasQueue()) {
+								if (!status.hasMoreQueuedCards(swimlane)) {
+									createEmptyCell(row, status, swimlane);
+									createCardCell(row, status.getCard(swimlane));
+									swimlane.removeOneCard();
+								} else {
+									createQueuedCardCell(row, status.getQueuedCard(swimlane));
+									swimlane.removeOneCard();
+									if (status.hasMoreStatusCards(swimlane)) {
+										createCardCell(row, status.getCard(swimlane));
+										swimlane.removeOneCard();
+									} else {
+										createEmptyCell(row, status, swimlane);
+									}
+								}
+							} else {
+								createCardCell(row, status.getCard(swimlane));
+								swimlane.removeOneCard();
+							}
+						}
+					}
+					rows.appendChild(row);
+					swimlaneRowsMap.get(swimlane.getValue()).add(row);
+				}
 			}
 		}
 	}
